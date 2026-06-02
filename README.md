@@ -1,17 +1,46 @@
-# btc_horizon
+# BTC Horizon
 
-A new Flutter project.
+BTC Horizon is a Flutter application designed to help users understand Bitcoin market cycles and identify potential buying and selling opportunities.
 
-## Getting Started
+Rather than displaying individual market indicators separately, the goal of this project is to combine multiple data sources into a single view that helps answer a simple question:
 
-This project is a starting point for a Flutter application.
+"Where are we in the Bitcoin market cycle?"
 
-A few resources to get you started if this is your first Flutter project:
+## Current Features
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+- Fear & Greed Index
+- Real-time Bitcoin Price (Binance WebSocket)
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Planned Features
+
+### Market Indicators
+
+- Funding Rate
+- MVRV
+- Rainbow Chart
+- Kimchi Premium
+- Additional On-Chain Metrics
+
+### Market Analysis
+
+- Market Position Score
+- Bull/Bear Cycle Analysis
+- Buy/Sell Opportunity Signals
+
+### Community
+
+- Market Discussion Board
+- User Insights & Opinions
+
+## Tech Stack
+
+- Flutter
+- Dart
+- REST API
+- WebSocket
+
+## Purpose
+
+This project combines my interest in cryptocurrency markets with my goal of becoming a Flutter developer.
+
+By building BTC Horizon, I aim to improve my Flutter development skills while creating a practical tool for analyzing Bitcoin market cycles.
