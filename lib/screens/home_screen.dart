@@ -6,6 +6,7 @@ import 'package:btc_horizon/services/binance_service.dart';
 import 'package:btc_horizon/services/binance_socket_service.dart';
 import 'package:btc_horizon/widgets/btc_price_card.dart';
 import 'package:btc_horizon/widgets/fear_greed_card.dart';
+import 'package:btc_horizon/widgets/funding_rate_card.dart';
 import 'package:flutter/material.dart';
 import 'package:btc_horizon/services/fear_greed_service.dart';
 
@@ -26,14 +27,18 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Card(
-          color: Color(0xFF111827),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
-              children: [FearGreedCard(), BtcPriceCard()],
-            ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              SizedBox(height: 10),
+              FearGreedCard(),
+              SizedBox(height: 10),
+              BtcPriceCard(),
+              SizedBox(height: 10),
+              FundingRateCard(),
+            ],
           ),
         ),
       ),

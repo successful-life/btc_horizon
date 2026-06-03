@@ -10,7 +10,7 @@ class BtcPriceCard extends StatefulWidget {
 }
 
 class _BtcPriceCardState extends State<BtcPriceCard> {
-  final binanceSocketService = BinanceSocketService();
+  final BinanceSocketService binanceSocketService = BinanceSocketService();
 
   late final Stream<double> btcPriceStream;
 

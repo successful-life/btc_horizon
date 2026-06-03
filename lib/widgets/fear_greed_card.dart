@@ -13,6 +13,7 @@ class FearGreedCard extends StatefulWidget {
 class _FearGreedCardState extends State<FearGreedCard> {
   List<FearGreedModel> items = [];
   bool isLoading = true;
+  final FearGreedService fearGreedService = FearGreedService();
 
   @override
   void initState() {
@@ -21,8 +22,9 @@ class _FearGreedCardState extends State<FearGreedCard> {
   }
 
   Future<void> fetchData() async {
-    final fearGreedService = FearGreedService();
     final result = await fearGreedService.fetchFearGreed(limit: 1);
+
+    if (!mounted) return;
 
     setState(() {
       items = result;
@@ -50,26 +52,12 @@ class _FearGreedCardState extends State<FearGreedCard> {
     if (items.isEmpty) {
       return const Text('데이터 없음');
     }
-    return Card(
-      color: Colors.grey,
-      child: Column(
-        children: [
-          /*
-          Text('Today\'s Fear & Greed Index', style: TextStyle(fontSize: 16, color: Colors.red)),
-          Text('${items.first.value}', style: TextStyle(fontSize: 16, color: Colors.red)),
-          Text(
-            items.first.valueClassification,
-            style: TextStyle(color: _getFearGreedColor(items.first.valueClassification)),
-          ),*/
-          CryptoCard(
-            title: 'Fear & Greed Inedx',
-            value: items.first.value.toString(),
-            subtitle: items.first.valueClassification,
-            icon: Icons.psychology,
-            bgColor: Colors.cyan,
-          ),
-        ],
-      ),
+    return CryptoCard(
+      title: 'Fear & Greed Index',
+      value: items.first.value.toString(),
+      subtitle: items.first.valueClassification,
+      icon: Icons.psychology,
+      bgColor: Colors.cyan,
     );
   }
 }
