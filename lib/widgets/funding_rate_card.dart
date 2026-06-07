@@ -2,73 +2,29 @@ import 'package:btc_horizon/models/funding_rate_model.dart';
 import 'package:btc_horizon/services/funding_rate_service.dart';
 import 'package:btc_horizon/widgets/crypto_card.dart';
 import 'package:flutter/material.dart';
-import 'dart:async';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:btc_horizon/providers/funding_rate_provider.dart';
 
-class FundingRateCard extends StatefulWidget {
+class FundingRateCard extends ConsumerWidget {
   const FundingRateCard({super.key});
 
   @override
-  State<FundingRateCard> createState() => _FundingRateCardState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fundingRateAsyncValue = ref.watch(fundingRateProvider);
 
-class _FundingRateCardState extends State<FundingRateCard> {
-  FundingRateModel? fundingRate;
-  final FundingRateService service = FundingRateService();
-  String? errorMessage;
+    return fundingRateAsyncValue.when(
+      data: (fundingRateModel) {
+        return CryptoCard(
+          title: '펀딩비',
+          value: '${(fundingRateModel.lastFundingRate * 100).toStringAsFixed(4)}%',
+          subtitle: '바이낸스 선물',
+          icon: Icons.currency_exchange,
+          bgColor: Colors.purple,
+        );
+      },
 
-  @override
-  void initState() {
-    super.initState();
-
-    fetchData();
-  }
-
-  Future<void> fetchData() async {
-    try {
-      final result = await service.fetchFundingRate();
-
-      if (!mounted) return;
-
-      setState(() {
-        fundingRate = result;
-      });
-    } catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        errorMessage = "데이터를 불러올 수 없습니다.";
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (errorMessage != null) {
-      return CryptoCard(
-        title: 'Funding Rate',
-        value: '$errorMessage',
-        subtitle: '바이낸스 선물',
-        icon: Icons.error,
-        bgColor: Colors.red,
-      );
-    }
-
-    if (fundingRate == null) {
-      return CryptoCard(
-        title: 'Funding Rate',
-        value: 'Loading …',
-        subtitle: '바이낸스 선물',
-        icon: Icons.hourglass_top,
-        bgColor: Colors.grey,
-      );
-    }
-
-    return CryptoCard(
-      title: 'Funding Rate',
-      value: '${(fundingRate!.fundingRate * 100).toStringAsFixed(4)}%',
-      subtitle: '바이낸스 선물',
-      icon: Icons.attach_money,
-      bgColor: Colors.purple,
+      loading: () => Center(child: CircularProgressIndicator()),
+      error: (error, stackTrace) => Text("에러 발생: $error"),
     );
   }
 }

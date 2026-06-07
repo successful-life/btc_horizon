@@ -1,14 +1,8 @@
-import 'dart:async';
-
-import 'package:btc_horizon/models/coin_price_model.dart';
-import 'package:btc_horizon/models/fear_greed_model.dart';
-import 'package:btc_horizon/services/binance_service.dart';
-import 'package:btc_horizon/services/binance_socket_service.dart';
 import 'package:btc_horizon/widgets/btc_price_card.dart';
 import 'package:btc_horizon/widgets/fear_greed_card.dart';
 import 'package:btc_horizon/widgets/funding_rate_card.dart';
+import 'package:btc_horizon/widgets/market_temperature.dart';
 import 'package:flutter/material.dart';
-import 'package:btc_horizon/services/fear_greed_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -32,7 +26,9 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.max,
             children: [
-              SizedBox(height: 10),
+              MarketTemperature(),
+
+              SizedBox(height: 20),
               FearGreedCard(),
               SizedBox(height: 10),
               BtcPriceCard(),

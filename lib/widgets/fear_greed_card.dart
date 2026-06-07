@@ -2,62 +2,28 @@ import 'package:btc_horizon/models/fear_greed_model.dart';
 import 'package:btc_horizon/services/fear_greed_service.dart';
 import 'package:btc_horizon/widgets/crypto_card.dart';
 import 'package:flutter/material.dart';
+import 'package:btc_horizon/providers/fear_greed_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class FearGreedCard extends StatefulWidget {
+class FearGreedCard extends ConsumerWidget {
   const FearGreedCard({super.key});
 
   @override
-  State<FearGreedCard> createState() => _FearGreedCardState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fearGreedAsyncValue = ref.watch(fearGreedProvider);
 
-class _FearGreedCardState extends State<FearGreedCard> {
-  List<FearGreedModel> items = [];
-  bool isLoading = true;
-  final FearGreedService fearGreedService = FearGreedService();
-
-  @override
-  void initState() {
-    super.initState();
-    fetchData();
-  }
-
-  Future<void> fetchData() async {
-    final result = await fearGreedService.fetchFearGreed(limit: 1);
-
-    if (!mounted) return;
-
-    setState(() {
-      items = result;
-      isLoading = false;
-    });
-  }
-
-  Color _getFearGreedColor(String classification) {
-    return switch (classification) {
-      'Extreme Fear' => Colors.red,
-      'Fear' => Colors.orange,
-      'Neutral' => Colors.yellow,
-      'Greed' => Colors.lightGreen,
-      'Extreme Greed' => Colors.green,
-
-      _ => Colors.grey,
-    };
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (items.isEmpty) {
-      return const Text('데이터 없음');
-    }
-    return CryptoCard(
-      title: 'Fear & Greed Index',
-      value: items.first.value.toString(),
-      subtitle: items.first.valueClassification,
-      icon: Icons.psychology,
-      bgColor: Colors.cyan,
+    return fearGreedAsyncValue.when(
+      data: (fearGreedModel) {
+        return CryptoCard(
+          title: 'Fear & Greed Index',
+          value: fearGreedModel.value.toString(),
+          subtitle: fearGreedModel.valueClassification,
+          icon: Icons.psychology,
+          bgColor: Colors.cyan,
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stackTrace) => const Text('데이터를 불러오지 못했습니다.'),
     );
   }
 }

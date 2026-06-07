@@ -44,9 +44,9 @@ class _BtcPriceCardState extends State<BtcPriceCard> {
         }
 
         return CryptoCard(
-          title: '비트코인',
-          value: snapshot.data.toString(),
-          subtitle: '실시간 가격',
+          title: '비트코인 가격',
+          value: '${snapshot.data}',
+          subtitle: '바이낸스 현물',
           icon: Icons.currency_bitcoin,
           bgColor: Colors.orange.shade400,
         );
