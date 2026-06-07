@@ -32,13 +32,6 @@ Rather than displaying individual market indicators separately, the goal of this
 - Market Discussion Board
 - User Insights & Opinions
 
-## Tech Stack
-
-- Flutter
-- Dart
-- REST API
-- WebSocket
-
 ## Purpose
 
 This project combines my interest in cryptocurrency markets with my goal of becoming a Flutter developer.
