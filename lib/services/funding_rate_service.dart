@@ -5,10 +5,10 @@ import 'package:http/http.dart' as http;
 
 class FundingRateService {
   static const String _baseUrl = 'https://fapi.binance.com';
-  static const String _path = '/fapi/v1/premiumIndex?symbol=BTCUSDT';
+  static const String _endPoint = '/fapi/v1/premiumIndex?symbol=BTCUSDT';
 
   Future<FundingRateModel> fetchFundingRate() async {
-    final uri = Uri.parse("$_baseUrl$_path");
+    final uri = Uri.parse("$_baseUrl$_endPoint");
     final response = await http.get(uri);
 
     if (response.statusCode == 200) {

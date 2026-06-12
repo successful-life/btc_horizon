@@ -23,7 +23,7 @@ class FundingRateCard extends ConsumerWidget {
         );
       },
 
-      loading: () => Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stackTrace) => Text("에러 발생: $error"),
     );
   }

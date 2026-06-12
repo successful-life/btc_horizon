@@ -40,7 +40,7 @@ class _BtcPriceCardState extends State<BtcPriceCard> {
           return Text('에러 발생');
         }
         if (!snapshot.hasData) {
-          return CircularProgressIndicator();
+          return const CircularProgressIndicator();
         }
 
         return CryptoCard(

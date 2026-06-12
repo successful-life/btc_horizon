@@ -23,7 +23,7 @@ class FearGreedCard extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stackTrace) => const Text('데이터를 불러오지 못했습니다.'),
+      error: (error, stackTrace) => Text("에러 발생: $error"),
     );
   }
 }

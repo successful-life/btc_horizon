@@ -1,3 +1,4 @@
+import 'package:btc_horizon/providers/mvrv_z_score_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'fear_greed_provider.dart';
 import 'funding_rate_provider.dart';
@@ -34,25 +35,24 @@ double _getFundingScore(double fundingRate) {
   return 0.0;
 }
 
-// 3. 최종 시장 온도 계산 Provider
+// 3. 시장 온도 계산 Provider
 final marketTemperatureProvider = FutureProvider<double>((ref) async {
   final fearGreedData = await ref.watch(fearGreedProvider.future);
   final fundingRateData = await ref.watch(fundingRateProvider.future);
-
-  // MVRV 데이터는 아직 없으니 임시값 사용
-  double tempMvrv = 0.3;
+  final mvrvZScoreData = await ref.watch(mvrvZScoreProvider.future);
 
   // 실제 데이터 추출
   double fearGreedValue = fearGreedData.value.toDouble();
   double fundingRateValue = fundingRateData.lastFundingRate;
+  double mvrvZScoreValue = mvrvZScoreData.mvrvZScore;
 
-  // 점수 변환
-  double mvrvScore = _getMvrvScore(tempMvrv);
+  // 점수 변환 로직 실행
+  double mvrvScore = _getMvrvScore(mvrvZScoreValue);
   double fundingScore = _getFundingScore(fundingRateValue);
 
-  // 가중치 합산: 공포/탐욕(40%) + MVRV(55%) + 펀딩비(5%)
+  // 가중치 합산: 공포&탐욕(40%) + MVRV(55%) + 펀딩비(5%)
   double finalTemperature =
-      (fearGreedValue * 0.40) + (mvrvScore * 0.55) + (fundingScore * 5) * 0.05;
+      (fearGreedValue * 0.40) + (mvrvScore * 0.55) + (fundingScore * 5 * 0.05);
 
   // 온도가 0~100 사이를 벗어나지 않게 고정
   return finalTemperature.clamp(0.0, 100.0);

@@ -47,7 +47,7 @@ class MarketTemperature extends ConsumerWidget {
             child: CircularProgressIndicator(color: Colors.white),
           ),
         ),
-        error: (error, stack) => const Text('계산 오류', style: TextStyle(color: Colors.white)),
+        error: (error, stack) => Text("에러 발생: $error"),
       ),
     );
   }
