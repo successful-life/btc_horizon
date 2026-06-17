@@ -42,7 +42,6 @@ class _BtcPriceCardState extends State<BtcPriceCard> {
         if (!snapshot.hasData) {
           return const CircularProgressIndicator();
         }
-
         return CryptoCard(
           title: '비트코인 가격',
           value: '${snapshot.data}',

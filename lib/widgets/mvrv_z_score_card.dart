@@ -21,7 +21,7 @@ class MvrvZScoreCard extends ConsumerWidget {
           bgColor: Colors.lime,
         );
       },
-      error: (error, stackTrace) => Text("에러 발생: $error"),
+      error: (error, stackTrace) => Text("Error: $error"),
       loading: () => const CircularProgressIndicator(),
     );
   }

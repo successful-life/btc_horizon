@@ -1,4 +1,5 @@
 import 'package:btc_horizon/widgets/btc_price_card.dart';
+import 'package:btc_horizon/widgets/exchange_rate_card.dart';
 import 'package:btc_horizon/widgets/fear_greed_card.dart';
 import 'package:btc_horizon/widgets/funding_rate_card.dart';
 import 'package:btc_horizon/widgets/market_temperature.dart';
@@ -38,6 +39,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   FundingRateCard(),
                   const SizedBox(height: 10),
                   MvrvZScoreCard(),
+                  const SizedBox(height: 10),
+                  ExchangeRateCard(),
                 ],
               ),
             ),

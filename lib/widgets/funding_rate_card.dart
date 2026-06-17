@@ -1,5 +1,3 @@
-import 'package:btc_horizon/models/funding_rate_model.dart';
-import 'package:btc_horizon/services/funding_rate_service.dart';
 import 'package:btc_horizon/widgets/crypto_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,13 +16,13 @@ class FundingRateCard extends ConsumerWidget {
           title: '펀딩비',
           value: '${(fundingRateModel.lastFundingRate * 100).toStringAsFixed(4)}%',
           subtitle: '바이낸스 선물',
-          icon: Icons.currency_exchange,
+          icon: Icons.percent,
           bgColor: Colors.purple,
         );
       },
 
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stackTrace) => Text("에러 발생: $error"),
+      error: (error, stackTrace) => Text("Error: $error"),
     );
   }
 }

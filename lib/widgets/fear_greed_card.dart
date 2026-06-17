@@ -1,5 +1,3 @@
-import 'package:btc_horizon/models/fear_greed_model.dart';
-import 'package:btc_horizon/services/fear_greed_service.dart';
 import 'package:btc_horizon/widgets/crypto_card.dart';
 import 'package:flutter/material.dart';
 import 'package:btc_horizon/providers/fear_greed_provider.dart';
@@ -23,7 +21,7 @@ class FearGreedCard extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stackTrace) => Text("에러 발생: $error"),
+      error: (error, stackTrace) => Text("Error: $error"),
     );
   }
 }

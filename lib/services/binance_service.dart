@@ -15,7 +15,7 @@ class BinanceService {
 
       return CoinPriceModel.fromJson(json);
     } else {
-      throw Exception('Fear & Greed index 요청 실패');
+      throw Exception('Coin Price 요청 실패');
     }
   }
 }
