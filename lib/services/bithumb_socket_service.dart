@@ -2,24 +2,26 @@ import 'dart:convert';
 
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-class UpbitSocketService {
+class BithumbSocketService {
   final String market;
-  static const String _baseUrl = 'wss://api.upbit.com/websocket/v1';
+  static const String _baseUrl = 'wss://ws-api.bithumb.com/websocket/v1';
   late final WebSocketChannel channel;
 
-  UpbitSocketService({required this.market});
+  BithumbSocketService({required this.market});
 
   Stream<double> getPriceStream() {
     channel = WebSocketChannel.connect(Uri.parse(_baseUrl));
     channel.sink.add(
       jsonEncode([
-        {"ticket": "test"},
+        {"ticket": "test example"},
         {
           "type": "ticker",
           "codes": [market],
         },
+        {"format": "DEFAULT"},
       ]),
     );
+
     return channel.stream.map((data) {
       final result = jsonDecode(utf8.decode(data));
 
