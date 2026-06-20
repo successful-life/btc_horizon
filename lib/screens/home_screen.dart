@@ -4,20 +4,11 @@ import 'package:btc_horizon/widgets/fear_greed_card.dart';
 import 'package:btc_horizon/widgets/funding_rate_card.dart';
 import 'package:btc_horizon/widgets/market_temperature.dart';
 import 'package:btc_horizon/widgets/mvrv_z_score_card.dart';
+import 'package:btc_horizon/widgets/usdt_premium_card.dart';
 import 'package:flutter/material.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +31,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 10),
                   MvrvZScoreCard(),
                   const SizedBox(height: 10),
-                  ExchangeRateCard(),
+                  // ExchangeRateCard(),
+                  UsdtPremiumCard(),
                 ],
               ),
             ),
