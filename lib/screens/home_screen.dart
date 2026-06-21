@@ -13,6 +13,12 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(onPressed: () {}, icon: const Icon(Icons.menu)),
+        title: const Text('Crypto Cycle Dashboard'),
+        centerTitle: true,
+        actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none))],
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -20,19 +26,19 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 10),
             Expanded(
               child: ListView(
-                padding: EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(16.0),
                 children: [
+                  const UsdtPremiumCard(),
                   const SizedBox(height: 10),
-                  FearGreedCard(),
+                  const FearGreedCard(),
                   const SizedBox(height: 10),
-                  BtcPriceCard(),
+                  const BtcPriceCard(),
                   const SizedBox(height: 10),
-                  FundingRateCard(),
+                  const FundingRateCard(),
                   const SizedBox(height: 10),
-                  MvrvZScoreCard(),
+                  const MvrvZScoreCard(),
                   const SizedBox(height: 10),
                   // ExchangeRateCard(),
-                  UsdtPremiumCard(),
                 ],
               ),
             ),
