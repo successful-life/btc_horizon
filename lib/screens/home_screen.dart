@@ -1,5 +1,3 @@
-import 'package:btc_horizon/widgets/btc_price_card.dart';
-import 'package:btc_horizon/widgets/exchange_rate_card.dart';
 import 'package:btc_horizon/widgets/fear_greed_card.dart';
 import 'package:btc_horizon/widgets/funding_rate_card.dart';
 import 'package:btc_horizon/widgets/market_snapshot_bar.dart';
@@ -36,14 +34,11 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 10),
                   const FearGreedCard(),
                   const SizedBox(height: 10),
-                  const BtcPriceCard(),
-                  const SizedBox(height: 10),
                   const FundingRateCard(),
                   const SizedBox(height: 10),
                   const MvrvZScoreCard(),
                   const SizedBox(height: 10),
                   const UsdtPremiumCard(),
-                  // ExchangeRateCard(),
                 ],
               ),
             ),

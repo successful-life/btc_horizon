@@ -1,47 +1,71 @@
+import 'package:btc_horizon/providers/binance_price_provider.dart';
+import 'package:btc_horizon/providers/usdt_premium_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'snapshot_item.dart';
+import 'package:intl/intl.dart';
 
-class MarketSnapshotBar extends StatelessWidget {
+class MarketSnapshotBar extends ConsumerWidget {
+  static final NumberFormat _numberFormat = NumberFormat('#,###');
+
   const MarketSnapshotBar({super.key});
 
+  Widget _logo(String path) {
+    return Image.asset(path, width: 40, height: 40);
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final btcPriceAsync = ref.watch(binancePriceProvider("btcusdt"));
+    final usdtPremiumAsync = ref.watch(usdtPremiumProvider);
+
+    if (btcPriceAsync.isLoading || usdtPremiumAsync.isLoading) {
+      return const SizedBox(height: 80, child: Center(child: Text("시장 데이터 로딩 중...")));
+    }
+
+    if (btcPriceAsync.hasError || usdtPremiumAsync.hasError) {
+      return const SizedBox(height: 80, child: Center(child: Text("시장 데이터 오류")));
+    }
+
+    final model = usdtPremiumAsync.requireValue;
+    final btcPrice = btcPriceAsync.requireValue;
+
     return Row(
       children: [
-        // TODO: Replace dummy values with provider data.
         Expanded(
           child: SnapshotItem(
             label: 'BTC/USDT',
-            value: '\$64,000',
-            logo: Image.asset('assets/logos/bitcoin_logo.png', width: 40, height: 40),
+            value: '\$${_numberFormat.format(btcPrice)}',
+            logo: _logo('assets/logos/bitcoin_logo.png'),
           ),
         ),
         Expanded(
           child: SnapshotItem(
             label: '환율',
-            value: '1,530원',
-            logo: Image.asset('assets/logos/dollar_logo.png', width: 40, height: 40),
+            value: '${_numberFormat.format(model.usdKrwRate)}원',
+            logo: _logo('assets/logos/dollar_logo.png'),
           ),
         ),
         Expanded(
           child: SnapshotItem(
             label: '테더 김프',
-            value: '-1.14%',
-            logo: Image.asset('assets/logos/usdt_logo.png', width: 40, height: 40),
+            value: '${model.premiumPercent.toStringAsFixed(2)}%',
+            logo: _logo('assets/logos/usdt_logo.png'),
+            valueColor: model.premiumPercent >= 0 ? Colors.green : Colors.red,
           ),
         ),
         Expanded(
           child: SnapshotItem(
             label: '업비트 테더',
-            value: '1,513원',
-            logo: Image.asset('assets/logos/upbit_logo.png', width: 40, height: 40),
+            value: '${_numberFormat.format(model.upbitUsdtPrice)}원',
+            logo: _logo('assets/logos/upbit_logo.png'),
           ),
         ),
         Expanded(
           child: SnapshotItem(
             label: '빗썸 테더',
-            value: '1,512원',
-            logo: Image.asset('assets/logos/bithumb_logo.png', width: 40, height: 40),
+            value: '${_numberFormat.format(model.bithumbUsdtPrice)}원',
+            logo: _logo('assets/logos/bithumb_logo.png'),
           ),
         ),
       ],
