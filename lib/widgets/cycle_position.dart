@@ -7,13 +7,13 @@ class CyclePosition extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cyclePositionAsnyc = ref.watch(cyclePositionProvider);
+    final cyclePositionAsync = ref.watch(cyclePositionProvider);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(16)),
-      child: cyclePositionAsnyc.when(
+      child: cyclePositionAsync.when(
         data: (score) {
           final positionLabel = switch (score) {
             >= 81 => '고점 위험',
@@ -37,17 +37,25 @@ class CyclePosition extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(positionLabel, style: const TextStyle(color: Colors.white)),
+              Text(
+                positionLabel,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
             ],
           );
         },
         loading: () => const Center(
           child: Padding(
             padding: EdgeInsets.all(20.0),
-            child: CircularProgressIndicator(color: Colors.white),
+            child: Text('시장 사이클 위치 데이터 로딩 중...', style: TextStyle(color: Colors.white)),
           ),
         ),
-        error: (error, stack) => const Text('사이클 위치 데이터 오류', style: TextStyle(color: Colors.white)),
+        error: (error, stack) =>
+            const Text('시장 사이클 위치 데이터 오류', style: TextStyle(color: Colors.white)),
       ),
     );
   }
