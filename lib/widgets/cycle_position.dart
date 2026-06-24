@@ -1,35 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/market_temperature_provider.dart';
+import '../providers/cycle_position_provider.dart';
 
-class MarketTemperature extends ConsumerWidget {
-  const MarketTemperature({super.key});
+class CyclePosition extends ConsumerWidget {
+  const CyclePosition({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tempAsyncValue = ref.watch(marketTemperatureProvider);
+    final cyclePositionAsnyc = ref.watch(cyclePositionProvider);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(16)),
-      child: tempAsyncValue.when(
-        data: (temperature) {
-          String status = switch (temperature) {
-            >= 90 => '위험',
-            >= 80 => '과열',
-            >= 70 => '주의',
-            >= 40 => '보통',
-            _ => '낮음',
+      child: cyclePositionAsnyc.when(
+        data: (score) {
+          final positionLabel = switch (score) {
+            >= 81 => '고점 위험',
+            >= 61 => '과열 진입',
+            >= 41 => '중립 구간',
+            >= 21 => '저평가 구간',
+            _ => '저점권',
           };
 
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('시장 온도', style: TextStyle(color: Colors.white)),
+              const Text('시장 사이클 위치', style: TextStyle(color: Colors.white)),
               const SizedBox(height: 8),
               Text(
-                '${temperature.toStringAsFixed(1)} / 100',
+                '${score.toStringAsFixed(1)} / 100',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -37,7 +37,7 @@ class MarketTemperature extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(status, style: const TextStyle(color: Colors.white)),
+              Text(positionLabel, style: const TextStyle(color: Colors.white)),
             ],
           );
         },
@@ -47,7 +47,7 @@ class MarketTemperature extends ConsumerWidget {
             child: CircularProgressIndicator(color: Colors.white),
           ),
         ),
-        error: (error, stack) => Text("Error: $error"),
+        error: (error, stack) => const Text('사이클 위치 데이터 오류', style: TextStyle(color: Colors.white)),
       ),
     );
   }

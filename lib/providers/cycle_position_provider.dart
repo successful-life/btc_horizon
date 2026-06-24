@@ -36,7 +36,7 @@ double _getFundingScore(double fundingRate) {
 }
 
 // 3. 시장 온도 계산 Provider
-final marketTemperatureProvider = FutureProvider<double>((ref) async {
+final cyclePositionProvider = FutureProvider<double>((ref) async {
   final fearGreedData = await ref.watch(fearGreedProvider.future);
   final fundingRateData = await ref.watch(fundingRateProvider.future);
   final mvrvZScoreData = await ref.watch(mvrvZScoreProvider.future);
@@ -51,9 +51,8 @@ final marketTemperatureProvider = FutureProvider<double>((ref) async {
   double fundingScore = _getFundingScore(fundingRateValue);
 
   // 가중치 합산: 공포&탐욕(40%) + MVRV(55%) + 펀딩비(5%)
-  double finalTemperature =
-      (fearGreedValue * 0.40) + (mvrvScore * 0.55) + (fundingScore * 5 * 0.05);
+  double finalResult = (fearGreedValue * 0.40) + (mvrvScore * 0.55) + (fundingScore * 5 * 0.05);
 
-  // 온도가 0~100 사이를 벗어나지 않게 고정
-  return finalTemperature.clamp(0.0, 100.0);
+  // 최종값이 0~100 사이를 벗어나지 않게 고정
+  return finalResult.clamp(0.0, 100.0);
 });

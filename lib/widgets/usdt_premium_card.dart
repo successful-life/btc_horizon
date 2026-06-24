@@ -1,7 +1,5 @@
 import 'package:btc_horizon/providers/usdt_premium_provider.dart';
-import 'package:btc_horizon/widgets/crypto_card.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class UsdtPremiumCard extends ConsumerWidget {

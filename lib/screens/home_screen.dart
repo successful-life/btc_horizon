@@ -1,7 +1,7 @@
 import 'package:btc_horizon/widgets/fear_greed_card.dart';
 import 'package:btc_horizon/widgets/funding_rate_card.dart';
 import 'package:btc_horizon/widgets/market_snapshot_bar.dart';
-import 'package:btc_horizon/widgets/market_temperature.dart';
+import 'package:btc_horizon/widgets/cycle_position.dart';
 import 'package:btc_horizon/widgets/mvrv_z_score_card.dart';
 import 'package:btc_horizon/widgets/usdt_premium_card.dart';
 import 'package:flutter/material.dart';
@@ -30,7 +30,7 @@ class HomeScreen extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.all(16.0),
                 children: [
-                  const MarketTemperature(),
+                  const CyclePosition(),
                   const SizedBox(height: 10),
                   const FearGreedCard(),
                   const SizedBox(height: 10),
