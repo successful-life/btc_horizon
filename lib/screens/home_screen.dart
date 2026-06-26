@@ -9,7 +9,10 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF0F4F8),
       appBar: AppBar(
+        elevation: 0,
+        backgroundColor: const Color(0xFFF0F4F8),
         leading: IconButton(onPressed: () {}, icon: const Icon(Icons.menu)),
         title: const Text('Crypto Cycle Dashboard', style: TextStyle(fontSize: 20)),
         centerTitle: true,
@@ -18,11 +21,11 @@ class HomeScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 12, left: 16, right: 16, bottom: 8),
+            const Padding(
+              padding: EdgeInsets.only(top: 12, left: 12, right: 12, bottom: 8),
               child: MarketSnapshotBar(),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 16),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(16.0),

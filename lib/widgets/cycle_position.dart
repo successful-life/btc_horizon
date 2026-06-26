@@ -12,7 +12,10 @@ class CyclePosition extends ConsumerWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E88E5),
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: cyclePositionAsync.when(
         data: (score) {
           final positionLabel = switch (score) {
@@ -54,8 +57,12 @@ class CyclePosition extends ConsumerWidget {
             child: Text('시장 사이클 위치 데이터 로딩 중...', style: TextStyle(color: Colors.white)),
           ),
         ),
-        error: (error, stack) =>
-            const Text('시장 사이클 위치 데이터 오류', style: TextStyle(color: Colors.white)),
+        error: (error, stack) => const Center(
+          child: Padding(
+            padding: EdgeInsets.all(20.0),
+            child: Text('시장 사이클 위치 데이터 오류', style: TextStyle(color: Colors.white)),
+          ),
+        ),
       ),
     );
   }

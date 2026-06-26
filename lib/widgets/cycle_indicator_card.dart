@@ -23,7 +23,7 @@ class CycleIndicatorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 160,
+      width: 150,
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(20)),
       child: Column(
