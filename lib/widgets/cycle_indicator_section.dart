@@ -1,73 +1,123 @@
-import 'package:btc_horizon/providers/fear_greed_provider.dart';
-import 'package:btc_horizon/providers/funding_rate_provider.dart';
-import 'package:btc_horizon/providers/mvrv_z_score_provider.dart';
+import 'package:btc_horizon/providers/cycle_indicator_provider.dart';
+import 'package:btc_horizon/screens/cycle_indicator_detail_screen.dart';
 import 'package:btc_horizon/widgets/cycle_indicator_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 class CycleIndicatorSection extends ConsumerWidget {
   const CycleIndicatorSection({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final fearGreedAsync = ref.watch(fearGreedProvider);
-    final mvrvZScoreAsync = ref.watch(mvrvZScoreProvider);
-    final fundingRateAsync = ref.watch(fundingRateProvider);
+    final cycleIndicatorList = ref.watch(cycleIndicatorProvider);
 
-    if (fearGreedAsync.isLoading || mvrvZScoreAsync.isLoading || fundingRateAsync.isLoading) {
-      return const SizedBox(height: 200, child: Center(child: Text('사이클 지표 로딩 중...')));
+    if (cycleIndicatorList.length < 4) {
+      return const SizedBox.shrink();
     }
-
-    if (fearGreedAsync.hasError || mvrvZScoreAsync.hasError || fundingRateAsync.hasError) {
-      return const SizedBox(height: 200, child: Center(child: Text('사이클 지표 오류')));
-    }
-
-    final fearGreedModel = fearGreedAsync.requireValue;
-    final mvrvModel = mvrvZScoreAsync.requireValue;
-    final fundingRateModel = fundingRateAsync.requireValue;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('사이클 지표', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 170,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              CycleIndicatorCard(
-                icon: Icons.speed,
-                title: 'Fear & Greed',
-                value: fearGreedModel.value.toString(),
-                subtitle: fearGreedModel.valueClassification,
-                valueColor: Colors.green.shade900,
-                bgColor: const Color(0xFFE6F7D8),
-                iconColor: Colors.green.shade800,
-              ),
-              const SizedBox(width: 10),
-              CycleIndicatorCard(
-                icon: Icons.percent,
-                title: 'Funding Rate',
-                value: '${(fundingRateModel.lastFundingRate * 100).toStringAsFixed(4)}%',
-                subtitle: 'BTC/USDT perp',
-                valueColor: Colors.orange.shade900,
-                bgColor: const Color(0xFFFFE2A8),
-                iconColor: Colors.orange.shade800,
-              ),
-              const SizedBox(width: 10),
-              CycleIndicatorCard(
-                icon: Icons.show_chart,
-                title: 'MVRV Z-Score',
-                value: mvrvModel.mvrvZScore.toStringAsFixed(2),
-                subtitle: DateFormat('yyyy-MM-dd').format(mvrvModel.timestamp),
-                valueColor: Colors.indigo.shade900,
-                bgColor: const Color(0xFFE1E6FF),
-                iconColor: Colors.indigo.shade800,
-              ),
-            ],
-          ),
+        Column(
+          children: [
+            Row(
+              children: [
+                // 1. Valuation Card
+                Expanded(
+                  child: CycleIndicatorCard(
+                    icon: Icons.insert_chart_outlined_sharp,
+                    title: cycleIndicatorList[0].title,
+                    scoreText: cycleIndicatorList[0].score?.toString() ?? '-',
+                    valueColor: Colors.green.shade900,
+                    bgColor: const Color(0xFFE6F7D8),
+                    iconColor: Colors.green.shade800,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CycleIndicatorDetailScreen(
+                            cycleIndicatorModel: cycleIndicatorList[0],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // 2. Cycle Timing Card
+                Expanded(
+                  child: CycleIndicatorCard(
+                    icon: Icons.date_range,
+                    title: cycleIndicatorList[1].title,
+                    scoreText: cycleIndicatorList[1].score?.toString() ?? '-',
+                    valueColor: Colors.orange.shade900,
+                    bgColor: const Color(0xFFFFE2A8),
+                    iconColor: Colors.orange.shade800,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CycleIndicatorDetailScreen(
+                            cycleIndicatorModel: cycleIndicatorList[1],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                // 3. trend Card
+                Expanded(
+                  child: CycleIndicatorCard(
+                    icon: Icons.show_chart,
+                    title: cycleIndicatorList[2].title,
+                    scoreText: cycleIndicatorList[2].score?.toString() ?? '-',
+                    valueColor: Colors.indigo.shade900,
+                    bgColor: const Color(0xFFE1E6FF),
+                    iconColor: Colors.indigo.shade800,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CycleIndicatorDetailScreen(
+                            cycleIndicatorModel: cycleIndicatorList[2],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // 4. Sentiment / Leverage Card
+                Expanded(
+                  child: CycleIndicatorCard(
+                    icon: Icons.show_chart,
+                    title: cycleIndicatorList[3].title,
+                    scoreText: cycleIndicatorList[3].score?.toString() ?? '-',
+                    valueColor: Colors.red.shade900,
+                    bgColor: const Color.fromARGB(255, 249, 169, 169),
+                    iconColor: Colors.red.shade800,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CycleIndicatorDetailScreen(
+                            cycleIndicatorModel: cycleIndicatorList[3],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ],
     );

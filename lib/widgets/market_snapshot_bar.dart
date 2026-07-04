@@ -6,7 +6,8 @@ import 'snapshot_item.dart';
 import 'package:intl/intl.dart';
 
 class MarketSnapshotBar extends ConsumerWidget {
-  static final NumberFormat _numberFormat = NumberFormat('#,###');
+  static final NumberFormat _numberFormatBTC = NumberFormat('#,##0.00');
+  static final NumberFormat _numberFormatUSD = NumberFormat('#,##0');
 
   const MarketSnapshotBar({super.key});
 
@@ -35,14 +36,14 @@ class MarketSnapshotBar extends ConsumerWidget {
         Expanded(
           child: SnapshotItem(
             label: 'BTC/USDT',
-            value: '\$${_numberFormat.format(btcPrice)}',
+            value: '\$${_numberFormatBTC.format(btcPrice)}',
             logo: _logo('assets/logos/bitcoin_logo.png'),
           ),
         ),
         Expanded(
           child: SnapshotItem(
             label: '환율',
-            value: '${_numberFormat.format(model.usdKrwRate)}원',
+            value: '${_numberFormatUSD.format(model.usdKrwRate)}원',
             logo: _logo('assets/logos/dollar_logo.png'),
           ),
         ),
@@ -57,14 +58,14 @@ class MarketSnapshotBar extends ConsumerWidget {
         Expanded(
           child: SnapshotItem(
             label: '업비트 테더',
-            value: '${_numberFormat.format(model.upbitUsdtPrice)}원',
+            value: '${_numberFormatUSD.format(model.upbitUsdtPrice)}원',
             logo: _logo('assets/logos/upbit_logo.png'),
           ),
         ),
         Expanded(
           child: SnapshotItem(
             label: '빗썸 테더',
-            value: '${_numberFormat.format(model.bithumbUsdtPrice)}원',
+            value: '${_numberFormatUSD.format(model.bithumbUsdtPrice)}원',
             logo: _logo('assets/logos/bithumb_logo.png'),
           ),
         ),
