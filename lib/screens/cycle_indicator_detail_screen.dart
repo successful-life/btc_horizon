@@ -8,6 +8,10 @@ class CycleIndicatorDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final categoryScoreText = cycleIndicatorModel.score == null
+        ? '-'
+        : cycleIndicatorModel.score!.toStringAsFixed(1);
+
     return Scaffold(
       appBar: AppBar(title: Text('${cycleIndicatorModel.title} 상세')),
       body: SingleChildScrollView(
@@ -27,18 +31,19 @@ class CycleIndicatorDetailScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Icon(Icons.insert_chart_outlined_sharp),
-                      SizedBox(width: 10),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           cycleIndicatorModel.title,
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
+                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
                         ),
                       ),
                       Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('${cycleIndicatorModel.score ?? '-'} / 100'),
+                          Text('$categoryScoreText / 100'),
                           const SizedBox(height: 10),
-                          const Text('저평가 (하드코딩 임시값)'),
+                          const Text('저평가 (임시)'),
                         ],
                       ),
                     ],
@@ -48,24 +53,90 @@ class CycleIndicatorDetailScreen extends StatelessWidget {
               const SizedBox(height: 20),
 
               // 2. Indicator
-              Padding(
+              Container(
                 padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: Column(
                   children: [
                     const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [Text('지표'), Text('현재 값'), Text('점수')],
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Text('지표', style: TextStyle(fontWeight: FontWeight.w600)),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            '현재 값',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            '환산 점수',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            '상태',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 10),
-                    for (final indicator in cycleIndicatorModel.indicators)
+                    const Divider(),
+
+                    for (final indicator in cycleIndicatorModel.indicators) ...[
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Expanded(flex: 2, child: Text(indicator.label)),
-                          Expanded(flex: 2, child: Text(indicator.value)),
-                          Expanded(flex: 1, child: Text(indicator.score?.toString() ?? '-')),
+                          Expanded(
+                            flex: 3,
+                            child: Text(
+                              indicator.label,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              indicator.value,
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              indicator.score == null ? '-' : '${indicator.score}/100',
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              indicator.status ?? '-',
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ],
                       ),
+                      const Divider(),
+                    ],
                   ],
                 ),
               ),

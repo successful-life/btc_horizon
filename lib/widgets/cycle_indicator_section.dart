@@ -29,7 +29,7 @@ class CycleIndicatorSection extends ConsumerWidget {
                   child: CycleIndicatorCard(
                     icon: Icons.insert_chart_outlined_sharp,
                     title: cycleIndicatorList[0].title,
-                    scoreText: cycleIndicatorList[0].score?.toString() ?? '-',
+                    scoreText: cycleIndicatorList[0].score?.round().toString() ?? '-',
                     valueColor: Colors.green.shade900,
                     bgColor: const Color(0xFFE6F7D8),
                     iconColor: Colors.green.shade800,
@@ -51,7 +51,7 @@ class CycleIndicatorSection extends ConsumerWidget {
                   child: CycleIndicatorCard(
                     icon: Icons.date_range,
                     title: cycleIndicatorList[1].title,
-                    scoreText: cycleIndicatorList[1].score?.toString() ?? '-',
+                    scoreText: cycleIndicatorList[1].score?.round().toString() ?? '-',
                     valueColor: Colors.orange.shade900,
                     bgColor: const Color(0xFFFFE2A8),
                     iconColor: Colors.orange.shade800,
@@ -77,7 +77,7 @@ class CycleIndicatorSection extends ConsumerWidget {
                   child: CycleIndicatorCard(
                     icon: Icons.show_chart,
                     title: cycleIndicatorList[2].title,
-                    scoreText: cycleIndicatorList[2].score?.toString() ?? '-',
+                    scoreText: cycleIndicatorList[2].score?.round().toString() ?? '-',
                     valueColor: Colors.indigo.shade900,
                     bgColor: const Color(0xFFE1E6FF),
                     iconColor: Colors.indigo.shade800,
@@ -99,7 +99,7 @@ class CycleIndicatorSection extends ConsumerWidget {
                   child: CycleIndicatorCard(
                     icon: Icons.show_chart,
                     title: cycleIndicatorList[3].title,
-                    scoreText: cycleIndicatorList[3].score?.toString() ?? '-',
+                    scoreText: cycleIndicatorList[3].score?.round().toString() ?? '-',
                     valueColor: Colors.red.shade900,
                     bgColor: const Color.fromARGB(255, 249, 169, 169),
                     iconColor: Colors.red.shade800,
