@@ -111,14 +111,16 @@ class CycleIndicatorDetailScreen extends StatelessWidget {
                             child: Text(
                               indicator.value,
                               textAlign: TextAlign.center,
-                              maxLines: 1,
+                              maxLines: 3,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           Expanded(
                             flex: 2,
                             child: Text(
-                              indicator.score == null ? '-' : '${indicator.score}/100',
+                              indicator.score == null
+                                  ? '-'
+                                  : '${indicator.score!.toStringAsFixed(0)}/100',
                               textAlign: TextAlign.center,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,

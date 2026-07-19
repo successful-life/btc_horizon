@@ -1,5 +1,5 @@
 class FearGreedModel {
-  final int value;
+  final double value;
   final String valueClassification;
   final DateTime timestamp;
   final int? timeUntilUpdate; // 리스트 중 최신 항목(첫 번째)에만 존재, 나머지는 null
@@ -13,7 +13,7 @@ class FearGreedModel {
 
   factory FearGreedModel.fromJson(Map<String, dynamic> json) {
     return FearGreedModel(
-      value: int.parse(json['value']),
+      value: double.parse(json['value']),
       valueClassification: json['value_classification'],
       timestamp: DateTime.fromMillisecondsSinceEpoch(
         int.parse(json['timestamp']) * 1000, // unix timestamp는 초 단위라 *1000

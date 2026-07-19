@@ -8,10 +8,9 @@ import 'package:btc_horizon/utils/cycle_indicator_calculator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final cycleIndicatorProvider = Provider<List<CycleIndicatorModel>>((ref) {
-  final List<WeightedScore> valuationList = [];
-  final List<WeightedScore> cycleTimingList = [];
-  final List<WeightedScore> trendMomentumList = [];
-  final List<WeightedScore> sentimentLeverageList = [];
+  final valuationList = <WeightedScore>[];
+  final cycleTimingList = <WeightedScore>[];
+  final sentimentLeverageList = <WeightedScore>[];
 
   // ================================
   // 1. Valuation & On-chain
@@ -49,9 +48,15 @@ final cycleIndicatorProvider = Provider<List<CycleIndicatorModel>>((ref) {
 
     valuationList.add(WeightedScore(score: mvrvScore, weight: 1.0));
   }
+
   // ================================
   // 2. Cycle Timing
   // ================================
+
+  // 2-1. 고점 및 저점 기반 예측
+  final now = DateTime.now();
+  final timingRangeIndicator = calculateCycleTimingIndicator(today: now);
+  cycleTimingList.add(WeightedScore(score: timingRangeIndicator.score, weight: 1.0));
 
   // ================================
   // 3. Trend & Momentum
@@ -93,7 +98,7 @@ final cycleIndicatorProvider = Provider<List<CycleIndicatorModel>>((ref) {
       status: fearGreedStatus,
     );
 
-    sentimentLeverageList.add(WeightedScore(score: fearGreedValue, weight: 0.8));
+    sentimentLeverageList.add(WeightedScore(score: fearGreedScore, weight: 0.8));
   }
 
   // 4-2. Funding Rate
@@ -132,8 +137,7 @@ final cycleIndicatorProvider = Provider<List<CycleIndicatorModel>>((ref) {
   // ================================
 
   final valuationScore = calculateCategoryScore(indicatorList: valuationList);
-  final cycleTimingScore;
-  final trendMomentScore;
+  final cycleTimingScore = calculateCategoryScore(indicatorList: cycleTimingList);
   final sentimentLeverageScore = calculateCategoryScore(indicatorList: sentimentLeverageList);
 
   return [
@@ -143,7 +147,12 @@ final cycleIndicatorProvider = Provider<List<CycleIndicatorModel>>((ref) {
       weight: 40,
       indicators: [mvrvIndicator],
     ),
-    CycleIndicatorModel(title: '사이클 타이밍', score: null, weight: 25, indicators: []),
+    CycleIndicatorModel(
+      title: '사이클 타이밍',
+      score: cycleTimingScore,
+      weight: 25,
+      indicators: [timingRangeIndicator],
+    ),
     CycleIndicatorModel(title: '추세', score: null, weight: 20, indicators: []),
     CycleIndicatorModel(
       title: '심리/레버리지',

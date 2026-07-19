@@ -1,11 +1,17 @@
+import 'package:btc_horizon/models/indicator_summary_model.dart';
 import 'package:btc_horizon/models/weighted_score_model.dart';
+import 'dart:math' as math;
+import 'package:intl/intl.dart';
+
+const kCycleTolerance = Duration(days: 45);
+const double kWeightTolerance = 0.0001;
 
 // ================================
 // 1. Valuation & On-chain
 // ================================
 
 // 1-1. MVRV Z-Score
-int calculateMvrvScore(double mvrvZScore) {
+double calculateMvrvScore(double mvrvZScore) {
   if (mvrvZScore >= 7.0) return 100;
   if (mvrvZScore >= 6.5) return 97;
   if (mvrvZScore >= 6.0) return 95;
@@ -44,6 +50,249 @@ String getMvrvStatus(double mvrvZScore) {
 // ================================
 // 2. Cycle Timing
 // ================================
+bool isWithinRange({required DateTime date, required DateTime start, required DateTime end}) =>
+    !date.isBefore(start) && date.isBefore(end); // [start, end)
+
+double calculateRangeScore({
+  required DateTime date,
+  required DateTime rangeStart,
+  required DateTime rangeEnd,
+  required int centerScore,
+  required int edgeScore,
+}) {
+  final totalDays = rangeEnd.difference(rangeStart).inDays;
+
+  if (totalDays <= 0) {
+    throw ArgumentError('rangeEnd는 rangeStart보다 이후여야 합니다.');
+  }
+
+  final centerDate = rangeStart.add(Duration(days: totalDays ~/ 2));
+
+  final halfRangeDays = totalDays / 2;
+
+  final distanceDays = date.difference(centerDate).inDays.abs();
+
+  final distanceRatio = (distanceDays / halfRangeDays).clamp(0.0, 1.0);
+
+  final int stepCount;
+
+  const double centerZoneRatio = 0.15;
+  const double nearCenterZoneRatio = 0.35;
+  const double middleZoneRatio = 0.60;
+  const double edgeZoneRatio = 0.85;
+
+  // 예상 중심으로부터 범위 반경 대비 거리
+  // 0~15%: 중심 점수
+  // 15~35%: 1단계
+  // 35~60%: 2단계
+  // 60~85%: 3단계
+  // 85~100%: 경계 점수
+  if (distanceRatio <= centerZoneRatio) {
+    stepCount = 0;
+  } else if (distanceRatio <= nearCenterZoneRatio) {
+    stepCount = 1;
+  } else if (distanceRatio <= middleZoneRatio) {
+    stepCount = 2;
+  } else if (distanceRatio <= edgeZoneRatio) {
+    stepCount = 3;
+  } else {
+    stepCount = 4;
+  }
+
+  final stepProgress = stepCount / 4;
+
+  final score = centerScore + (edgeScore - centerScore) * stepProgress;
+
+  return score.clamp(math.min(centerScore, edgeScore), math.max(centerScore, edgeScore)).toDouble();
+}
+
+double calculateTransitionScore({
+  required DateTime date,
+  required DateTime startDate,
+  required DateTime endDate,
+  required int startScore,
+  required int endScore,
+}) {
+  final totalDays = endDate.difference(startDate).inDays;
+
+  if (totalDays <= 0) {
+    throw ArgumentError('endDate는 startDate보다 이후여야 합니다.');
+  }
+
+  final elapsedDaysFromStart = date.difference(startDate).inDays;
+
+  final progress = (elapsedDaysFromStart / totalDays).clamp(0.0, 1.0);
+
+  return (startScore + (endScore - startScore) * progress);
+}
+
+({int daysFromTopToBottom, int daysFromBottomToTop}) calculateAverageCycleIntervals({
+  required List<DateTime> tops,
+  required List<DateTime> bottoms,
+}) {
+  // 계산
+
+  int topToBottomTotalDays = 0;
+  int bottomToTopTotalDays = 0;
+
+  int topToBottomCount = 0;
+  int bottomToTopCount = 0;
+
+  final maxIndex = math.min(tops.length, bottoms.length - 1);
+
+  // 고점 to 저점 구하기
+  for (int i = 0; i < maxIndex; i++) {
+    if (!bottoms[i + 1].isAfter(tops[i])) {
+      throw ArgumentError('Bottom date must be after Top date.');
+    }
+    topToBottomTotalDays += bottoms[i + 1].difference(tops[i]).inDays;
+    topToBottomCount++;
+  }
+
+  // 저점 to 고점 구하기
+  for (int i = 0; i < tops.length && i < bottoms.length; i++) {
+    if (!tops[i].isAfter(bottoms[i])) {
+      throw ArgumentError('Top date must be after Bottom date.');
+    }
+    bottomToTopTotalDays += tops[i].difference(bottoms[i]).inDays;
+    bottomToTopCount++;
+  }
+
+  if (topToBottomCount == 0) {
+    throw ArgumentError('완성된 고점 → 저점 구간이 없습니다.');
+  }
+
+  if (bottomToTopCount == 0) {
+    throw ArgumentError('완성된 저점 → 고점 구간이 없습니다.');
+  }
+
+  int averageTopToBottom = (topToBottomTotalDays / topToBottomCount).round();
+  int averageBottomToTop = (bottomToTopTotalDays / bottomToTopCount).round();
+
+  return (daysFromTopToBottom: averageTopToBottom, daysFromBottomToTop: averageBottomToTop);
+}
+
+// 2-1. 날짜 기반 예측
+IndicatorSummaryModel calculateCycleTimingIndicator({required DateTime today}) {
+  final normalizedToday = DateTime(today.year, today.month, today.day);
+
+  // 확정된 고점 (첫 번째 고점 이후)
+  final List<DateTime> btcCycleTops = [
+    DateTime(2017, 12, 17),
+    DateTime(2021, 11, 10),
+    DateTime(2025, 10, 06),
+  ];
+  // 확정된 저점 (첫 번째 고점 이후)
+  final List<DateTime> btcCycleBottoms = [
+    DateTime(2015, 1, 14),
+    DateTime(2018, 12, 15),
+    DateTime(2022, 11, 21),
+  ];
+
+  final averageIntervals = calculateAverageCycleIntervals(
+    tops: btcCycleTops,
+    bottoms: btcCycleBottoms,
+  );
+
+  final bottomCenterDate = btcCycleTops.last.add(
+    Duration(days: averageIntervals.daysFromTopToBottom),
+  );
+
+  final topCenterDate = btcCycleBottoms.last.add(
+    Duration(days: averageIntervals.daysFromBottomToTop),
+  );
+
+  final topRangeStart = topCenterDate.subtract(kCycleTolerance);
+  final topRangeEnd = topCenterDate.add(kCycleTolerance);
+  final bottomRangeStart = bottomCenterDate.subtract(kCycleTolerance);
+  final bottomRangeEnd = bottomCenterDate.add(kCycleTolerance);
+
+  final formattedTopRangeStart = DateFormat('yyyy-MM-dd').format(topRangeStart);
+  final formattedTopRangeEnd = DateFormat('yyyy-MM-dd').format(topRangeEnd);
+  final formattedBottomRangeStart = DateFormat('yyyy-MM-dd').format(bottomRangeStart);
+  final formattedBottomRangeEnd = DateFormat('yyyy-MM-dd').format(bottomRangeEnd);
+
+  const int bottomCenterScore = 0;
+  const int bottomEdgeScore = 20;
+  const int topEdgeScore = 80;
+  const int topCenterScore = 100;
+
+  // 고점 내부라면
+  if (isWithinRange(date: normalizedToday, start: topRangeStart, end: topRangeEnd)) {
+    final score = calculateRangeScore(
+      date: normalizedToday,
+      rangeStart: topRangeStart,
+      rangeEnd: topRangeEnd,
+      centerScore: topCenterScore,
+      edgeScore: topEdgeScore,
+    );
+
+    return IndicatorSummaryModel(
+      label: '날짜 기반 분석',
+      value: '예상 고점: $formattedTopRangeStart~$formattedTopRangeEnd',
+      score: score,
+      status: '예상 고점 범위',
+    );
+  }
+  // 저점 내부라면
+  else if (isWithinRange(date: normalizedToday, start: bottomRangeStart, end: bottomRangeEnd)) {
+    final score = calculateRangeScore(
+      date: normalizedToday,
+      rangeStart: bottomRangeStart,
+      rangeEnd: bottomRangeEnd,
+      centerScore: bottomCenterScore,
+      edgeScore: bottomEdgeScore,
+    );
+
+    return IndicatorSummaryModel(
+      label: '날짜 기반 분석',
+      value: '예상 저점: $formattedBottomRangeStart~$formattedBottomRangeEnd',
+      score: score,
+      status: '예상 저점 범위',
+    );
+  }
+  // 고점으로 가는 중이라면
+  else if (isWithinRange(date: normalizedToday, start: bottomRangeEnd, end: topRangeStart)) {
+    final score = calculateTransitionScore(
+      date: normalizedToday,
+      startDate: bottomRangeEnd,
+      endDate: topRangeStart,
+      startScore: bottomEdgeScore,
+      endScore: topEdgeScore,
+    );
+
+    return IndicatorSummaryModel(
+      label: '날짜 기반 분석',
+      value: '다음 고점: $formattedTopRangeStart ~ $formattedTopRangeEnd',
+      score: score,
+      status: '저점 이후 · 고점 접근',
+    );
+  }
+  // 저점으로 가는 중이라면
+  else if (isWithinRange(date: normalizedToday, start: topRangeEnd, end: bottomRangeStart)) {
+    final score = calculateTransitionScore(
+      date: normalizedToday,
+      startDate: topRangeEnd,
+      endDate: bottomRangeStart,
+      startScore: topEdgeScore,
+      endScore: bottomEdgeScore,
+    );
+
+    return IndicatorSummaryModel(
+      label: '날짜 기반 분석',
+      value: '다음 저점: $formattedBottomRangeStart ~ $formattedBottomRangeEnd',
+      score: score,
+      status: '고점 이후 · 저점 접근',
+    );
+  } else {
+    return IndicatorSummaryModel(
+      label: '날짜 기반 분석',
+      value: '현재 날짜가 예상 범위를 벗어났습니다.',
+      score: null,
+      status: '데이터 업데이트 필요',
+    );
+  }
+}
 
 // ================================
 // 3. Trend & Momentum
@@ -54,7 +303,7 @@ String getMvrvStatus(double mvrvZScore) {
 // ================================
 
 // 4-1. Funding Rate
-int calculateFundingRateScore(double fundingRatePercent) {
+double calculateFundingRateScore(double fundingRatePercent) {
   if (fundingRatePercent >= 0.16) return 100;
   if (fundingRatePercent >= 0.14) return 90;
   if (fundingRatePercent >= 0.10) return 80;
@@ -82,7 +331,7 @@ String getFundingRateStatus(double fundingRatePercent) {
 }
 
 // 4-2. Fear & Greed
-String getFearGreedStatus(int fearGreedValue) {
+String getFearGreedStatus(double fearGreedValue) {
   if (fearGreedValue >= 75) return '극단적 탐욕';
   if (fearGreedValue >= 55) return '탐욕';
   if (fearGreedValue >= 45) return '중립';
@@ -94,7 +343,6 @@ String getFearGreedStatus(int fearGreedValue) {
 // 5. 각 카테고리 최종 점수 계산
 // ================================
 // 모든 지표의 score가 정상적으로 존재할 때만 카테고리 점수를 계산한다.
-// 하나라도 null이면 신뢰도 문제를 피하기 위해 null을 반환한다.
 // 각 카테고리의 weight 합은 1.0이 되도록 구성한다.
 double? calculateCategoryScore({required List<WeightedScore> indicatorList}) {
   if (indicatorList.isEmpty) return null;
@@ -109,8 +357,7 @@ double? calculateCategoryScore({required List<WeightedScore> indicatorList}) {
     totalWeight += item.weight;
   }
 
-  const tolerance = 0.0001;
-  if ((totalWeight - 1.0).abs() > tolerance) return null;
+  if ((totalWeight - 1.0).abs() > kWeightTolerance) return null;
 
   return score;
 }
