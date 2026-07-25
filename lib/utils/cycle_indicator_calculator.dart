@@ -1,10 +1,11 @@
+import 'package:btc_horizon/models/cycle_indicators.dart';
 import 'package:btc_horizon/models/indicator_summary_model.dart';
 import 'package:btc_horizon/models/weighted_score_model.dart';
 import 'dart:math' as math;
 import 'package:intl/intl.dart';
 
 const kCycleTolerance = Duration(days: 45);
-const double kWeightTolerance = 0.0001;
+const kWeightTolerance = 0.0001;
 
 // ================================
 // 1. Valuation & On-chain
@@ -207,10 +208,10 @@ IndicatorSummaryModel calculateCycleTimingIndicator({required DateTime today}) {
   final bottomRangeStart = bottomCenterDate.subtract(kCycleTolerance);
   final bottomRangeEnd = bottomCenterDate.add(kCycleTolerance);
 
-  final formattedTopRangeStart = DateFormat('yyyy-MM-dd').format(topRangeStart);
-  final formattedTopRangeEnd = DateFormat('yyyy-MM-dd').format(topRangeEnd);
-  final formattedBottomRangeStart = DateFormat('yyyy-MM-dd').format(bottomRangeStart);
-  final formattedBottomRangeEnd = DateFormat('yyyy-MM-dd').format(bottomRangeEnd);
+  final formattedTopRangeStart = DateFormat('MM/dd').format(topRangeStart);
+  final formattedTopRangeEnd = DateFormat('MM/dd').format(topRangeEnd);
+  final formattedBottomRangeStart = DateFormat('MM/dd').format(bottomRangeStart);
+  final formattedBottomRangeEnd = DateFormat('MM/dd').format(bottomRangeEnd);
 
   const int bottomCenterScore = 0;
   const int bottomEdgeScore = 20;
@@ -263,7 +264,7 @@ IndicatorSummaryModel calculateCycleTimingIndicator({required DateTime today}) {
 
     return IndicatorSummaryModel(
       label: '날짜 기반 분석',
-      value: '다음 고점: $formattedTopRangeStart ~ $formattedTopRangeEnd',
+      value: '예상 고점: $formattedTopRangeStart ~ $formattedTopRangeEnd',
       score: score,
       status: '저점 이후 · 고점 접근',
     );
@@ -280,7 +281,7 @@ IndicatorSummaryModel calculateCycleTimingIndicator({required DateTime today}) {
 
     return IndicatorSummaryModel(
       label: '날짜 기반 분석',
-      value: '다음 저점: $formattedBottomRangeStart ~ $formattedBottomRangeEnd',
+      value: '예상 저점: $formattedBottomRangeStart ~ $formattedBottomRangeEnd',
       score: score,
       status: '고점 이후 · 저점 접근',
     );
@@ -340,7 +341,7 @@ String getFearGreedStatus(double fearGreedValue) {
 }
 
 // ================================
-// 5. 각 카테고리 최종 점수 계산
+// 각 카테고리 최종 점수 계산
 // ================================
 // 모든 지표의 score가 정상적으로 존재할 때만 카테고리 점수를 계산한다.
 // 각 카테고리의 weight 합은 1.0이 되도록 구성한다.
@@ -360,4 +361,41 @@ double? calculateCategoryScore({required List<WeightedScore> indicatorList}) {
   if ((totalWeight - 1.0).abs() > kWeightTolerance) return null;
 
   return score;
+}
+
+// CyclePosition 관련 함수
+double calculateCyclePositionScore({required CycleIndicators indicators}) {
+  // 4개의 카테고리 중 score가 null인 것은 0점으로 설정
+  final valuationScore = (indicators.valuation.score ?? 0) * indicators.valuation.weight;
+  final cycleTimingScore = (indicators.cycleTiming.score ?? 0) * indicators.cycleTiming.weight;
+  final trendScore = (indicators.trend.score ?? 0) * indicators.trend.weight;
+  final sentimentScore = (indicators.sentiment.score ?? 0) * indicators.sentiment.weight;
+
+  final cyclePositionScore = (valuationScore + cycleTimingScore + trendScore + sentimentScore);
+
+  return cyclePositionScore.clamp(0, 100);
+}
+
+String getCyclePositionLabel({required double cyclePositionScore}) {
+  return switch (cyclePositionScore) {
+    >= 81 => '고점 위험',
+    >= 61 => '과열 진입',
+    >= 41 => '중립 구간',
+    >= 21 => '저평가 구간',
+    _ => '저점권',
+  };
+}
+
+String getCyclePositionDescription({required double cyclePositionScore}) {
+  return switch (cyclePositionScore) {
+    >= 81 => '시장 사이클상 고점에 가까운 구간입니다. 과거 사이클에서는 변동성이 확대되는 경우가 많았습니다.',
+
+    >= 61 => '시장 과열 신호가 점차 나타나는 구간입니다. 추가 상승 가능성과 함께 리스크도 함께 커질 수 있습니다.',
+
+    >= 41 => '시장 사이클의 중간 수준입니다. 뚜렷한 고점이나 저점 신호는 아직 확인되지 않습니다.',
+
+    >= 21 => '시장이 상대적으로 저평가 구간에 가까워지고 있습니다. 과거에는 장기적인 매수 기회가 형성되기도 했습니다.',
+
+    _ => '시장 사이클상 저점권에 가까운 구간입니다. 과거에는 장기 투자 관점에서 관심을 받던 구간입니다.',
+  };
 }

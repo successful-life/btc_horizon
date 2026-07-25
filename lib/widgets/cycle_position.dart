@@ -7,7 +7,7 @@ class CyclePosition extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cyclePositionAsync = ref.watch(cyclePositionProvider);
+    final cyclePosition = ref.watch(cyclePositionProvider);
 
     return Container(
       width: double.infinity,
@@ -16,53 +16,21 @@ class CyclePosition extends ConsumerWidget {
         color: const Color(0xFF1E88E5),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: cyclePositionAsync.when(
-        data: (score) {
-          final positionLabel = switch (score) {
-            >= 81 => '고점 위험',
-            >= 61 => '과열 진입',
-            >= 41 => '중립 구간',
-            >= 21 => '저평가 구간',
-            _ => '저점권',
-          };
-
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('시장 사이클 위치', style: TextStyle(color: Colors.white)),
-              const SizedBox(height: 8),
-              Text(
-                '${score.toStringAsFixed(1)} / 100',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                positionLabel,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
-          );
-        },
-        loading: () => const Center(
-          child: Padding(
-            padding: EdgeInsets.all(20.0),
-            child: Text('시장 사이클 위치 데이터 로딩 중...', style: TextStyle(color: Colors.white)),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(cyclePosition.title, style: TextStyle(color: Colors.white)),
+          const SizedBox(height: 8),
+          Text(
+            '${cyclePosition.score.toStringAsFixed(1)} / 100',
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
           ),
-        ),
-        error: (error, stack) => const Center(
-          child: Padding(
-            padding: EdgeInsets.all(20.0),
-            child: Text('시장 사이클 위치 데이터 오류', style: TextStyle(color: Colors.white)),
+          const SizedBox(height: 8),
+          Text(
+            cyclePosition.description,
+            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w400),
           ),
-        ),
+        ],
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:btc_horizon/models/cycle_indicator_model.dart';
+import 'package:btc_horizon/models/cycle_indicators.dart';
 import 'package:btc_horizon/models/indicator_summary_model.dart';
 import 'package:btc_horizon/models/weighted_score_model.dart';
 import 'package:btc_horizon/providers/fear_greed_provider.dart';
@@ -7,7 +8,12 @@ import 'package:btc_horizon/providers/mvrv_z_score_provider.dart';
 import 'package:btc_horizon/utils/cycle_indicator_calculator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final cycleIndicatorProvider = Provider<List<CycleIndicatorModel>>((ref) {
+double kValuationWeight = 0.4;
+double kCycleTimingWeight = 0.3;
+double kTrendWeight = 0.1;
+double kSentimentWeight = 0.2;
+
+final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
   final valuationList = <WeightedScore>[];
   final cycleTimingList = <WeightedScore>[];
   final sentimentLeverageList = <WeightedScore>[];
@@ -140,25 +146,38 @@ final cycleIndicatorProvider = Provider<List<CycleIndicatorModel>>((ref) {
   final cycleTimingScore = calculateCategoryScore(indicatorList: cycleTimingList);
   final sentimentLeverageScore = calculateCategoryScore(indicatorList: sentimentLeverageList);
 
-  return [
-    CycleIndicatorModel(
-      title: '가치평가',
-      score: valuationScore,
-      weight: 40,
-      indicators: [mvrvIndicator],
-    ),
-    CycleIndicatorModel(
-      title: '사이클 타이밍',
-      score: cycleTimingScore,
-      weight: 25,
-      indicators: [timingRangeIndicator],
-    ),
-    CycleIndicatorModel(title: '추세', score: null, weight: 20, indicators: []),
-    CycleIndicatorModel(
-      title: '심리/레버리지',
-      score: sentimentLeverageScore,
-      weight: 15,
-      indicators: [fearGreedIndicator, fundingRateIndicator],
-    ),
-  ];
+  final valuationModel = CycleIndicatorModel(
+    title: '가치평가',
+    score: valuationScore,
+    weight: kValuationWeight,
+    indicators: [mvrvIndicator],
+  );
+
+  final cycleTimingModel = CycleIndicatorModel(
+    title: '사이클 타이밍',
+    score: cycleTimingScore,
+    weight: kCycleTimingWeight,
+    indicators: [timingRangeIndicator],
+  );
+
+  final trendMomentumModel = CycleIndicatorModel(
+    title: '추세',
+    score: null,
+    weight: kTrendWeight,
+    indicators: [],
+  );
+
+  final sentimentLeverageModel = CycleIndicatorModel(
+    title: '심리/레버리지',
+    score: sentimentLeverageScore,
+    weight: kSentimentWeight,
+    indicators: [fearGreedIndicator, fundingRateIndicator],
+  );
+
+  return CycleIndicators(
+    valuation: valuationModel,
+    cycleTiming: cycleTimingModel,
+    trend: trendMomentumModel,
+    sentiment: sentimentLeverageModel,
+  );
 });
