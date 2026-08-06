@@ -1,28 +1,37 @@
+import 'package:btc_horizon/enums/binance_symbol.dart';
+import 'package:btc_horizon/models/binance_kline_request_model.dart';
 import 'package:btc_horizon/models/cycle_indicator_model.dart';
 import 'package:btc_horizon/models/cycle_indicators.dart';
 import 'package:btc_horizon/models/indicator_summary_model.dart';
 import 'package:btc_horizon/models/weighted_score_model.dart';
+import 'package:btc_horizon/providers/binance_kline_provider.dart';
 import 'package:btc_horizon/providers/fear_greed_provider.dart';
 import 'package:btc_horizon/providers/funding_rate_provider.dart';
 import 'package:btc_horizon/providers/mvrv_z_score_provider.dart';
 import 'package:btc_horizon/utils/cycle_indicator_calculator.dart';
+import 'package:btc_horizon/utils/trend_calculator.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:btc_horizon/enums/binance_interval.dart';
+import 'package:btc_horizon/providers/binance_price_provider.dart';
 
-double kValuationWeight = 0.4;
-double kCycleTimingWeight = 0.3;
-double kTrendWeight = 0.1;
-double kSentimentWeight = 0.2;
+const kValuationWeight = 0.4;
+const kCycleTimingWeight = 0.3;
+const kTrendWeight = 0.1;
+const kSentimentWeight = 0.2;
 
 final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
   final valuationList = <WeightedScore>[];
   final cycleTimingList = <WeightedScore>[];
-  final sentimentLeverageList = <WeightedScore>[];
+  final trendList = <WeightedScore>[];
+  final sentimentList = <WeightedScore>[];
 
   // ================================
   // 1. Valuation & On-chain
   // ================================
 
   // 1-1. MVRV Z-Score
+  /*
   final mvrvAsync = ref.watch(mvrvZScoreProvider);
   final IndicatorSummaryModel mvrvIndicator;
 
@@ -53,7 +62,7 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
     );
 
     valuationList.add(WeightedScore(score: mvrvScore, weight: 1.0));
-  }
+  }*/
 
   // ================================
   // 2. Cycle Timing
@@ -65,11 +74,52 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
   cycleTimingList.add(WeightedScore(score: timingRangeIndicator.score, weight: 1.0));
 
   // ================================
-  // 3. Trend & Momentum
+  // 3. Trend
   // ================================
+  // 3-1. Kline
+  const weeklyRequest = BinanceKlineRequestModel(
+    symbol: BinanceSymbol.btcusdt,
+    interval: BinanceKlineInterval.oneWeek,
+    limit: 210,
+  );
+  final weeklyBtcKlineAsync = ref.watch(binanceKlineProvider(weeklyRequest));
+  final btcPriceAsync = ref.watch(binancePriceProvider(BinanceSymbol.btcusdt));
+  final IndicatorSummaryModel klineIndicator;
+
+  if (weeklyBtcKlineAsync.isLoading || btcPriceAsync.isLoading) {
+    klineIndicator = const IndicatorSummaryModel(
+      label: 'Kline',
+      value: '로딩 중...',
+      score: null,
+      status: null,
+    );
+  } else if (weeklyBtcKlineAsync.hasError || btcPriceAsync.hasError) {
+    klineIndicator = const IndicatorSummaryModel(
+      label: 'Kline',
+      value: '에러 발생',
+      score: null,
+      status: null,
+    );
+  } else {
+    final weeklyBtcKlines = weeklyBtcKlineAsync.requireValue;
+    final weeklySma52Values = calculateSma(klines: weeklyBtcKlines, period: 52);
+    final sma52 = weeklySma52Values.last!;
+    final btcPrice = btcPriceAsync.requireValue;
+    final gap = calculateDifferencePercent(currentPrice: btcPrice, movingAverage: sma52);
+    final maPosition = calculateMaPositionStatus(currentPrice: btcPrice, maValue: sma52);
+    final maPositionScore = getMaPositionScore(maPosition: maPosition);
+    final maPositionStatus = getMaPositionDescription(maPosition: maPosition);
+    klineIndicator = IndicatorSummaryModel(
+      label: '1년 이평선과의 거리',
+      value: '${gap.toStringAsFixed(2)}%',
+      score: maPositionScore,
+      status: maPositionStatus,
+    );
+    trendList.add(WeightedScore(score: null, weight: 1.0));
+  }
 
   // ================================
-  // 4. Sentiment & Leverage
+  // 4. Sentiment
   // ================================
   final fearGreedAsync = ref.watch(fearGreedProvider);
   final fundingRateAsync = ref.watch(fundingRateProvider);
@@ -104,7 +154,7 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
       status: fearGreedStatus,
     );
 
-    sentimentLeverageList.add(WeightedScore(score: fearGreedScore, weight: 0.8));
+    sentimentList.add(WeightedScore(score: fearGreedScore, weight: 0.8));
   }
 
   // 4-2. Funding Rate
@@ -135,22 +185,21 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
       status: fundingRateStatus,
     );
 
-    sentimentLeverageList.add(WeightedScore(score: fundingRateScore, weight: 0.2));
+    sentimentList.add(WeightedScore(score: fundingRateScore, weight: 0.2));
   }
 
   // ================================
   // 각 카테고리의 Score값 계산
   // ================================
-
   final valuationScore = calculateCategoryScore(indicatorList: valuationList);
   final cycleTimingScore = calculateCategoryScore(indicatorList: cycleTimingList);
-  final sentimentLeverageScore = calculateCategoryScore(indicatorList: sentimentLeverageList);
+  final sentimentScore = calculateCategoryScore(indicatorList: sentimentList);
 
   final valuationModel = CycleIndicatorModel(
     title: '가치평가',
     score: valuationScore,
     weight: kValuationWeight,
-    indicators: [mvrvIndicator],
+    indicators: [], //[mvrvIndicator],
   );
 
   final cycleTimingModel = CycleIndicatorModel(
@@ -160,16 +209,16 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
     indicators: [timingRangeIndicator],
   );
 
-  final trendMomentumModel = CycleIndicatorModel(
+  final trendModel = CycleIndicatorModel(
     title: '추세',
     score: null,
     weight: kTrendWeight,
-    indicators: [],
+    indicators: [klineIndicator],
   );
 
-  final sentimentLeverageModel = CycleIndicatorModel(
+  final sentimentModel = CycleIndicatorModel(
     title: '심리/레버리지',
-    score: sentimentLeverageScore,
+    score: sentimentScore,
     weight: kSentimentWeight,
     indicators: [fearGreedIndicator, fundingRateIndicator],
   );
@@ -177,7 +226,7 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
   return CycleIndicators(
     valuation: valuationModel,
     cycleTiming: cycleTimingModel,
-    trend: trendMomentumModel,
-    sentiment: sentimentLeverageModel,
+    trend: trendModel,
+    sentiment: sentimentModel,
   );
 });

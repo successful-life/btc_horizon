@@ -88,7 +88,7 @@ class CycleIndicatorSection extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-                // 4. Sentiment / Leverage Card
+                // 4. Sentiment Card
                 Expanded(
                   child: CycleIndicatorCard(
                     icon: Icons.show_chart,

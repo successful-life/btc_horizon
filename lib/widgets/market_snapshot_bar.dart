@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'snapshot_item.dart';
 import 'package:intl/intl.dart';
+import 'package:btc_horizon/enums/binance_symbol.dart';
 
 class MarketSnapshotBar extends ConsumerWidget {
   static final NumberFormat _numberFormatBTC = NumberFormat('#,##0.00');
@@ -17,7 +18,7 @@ class MarketSnapshotBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final btcPriceAsync = ref.watch(binancePriceProvider("btcusdt"));
+    final btcPriceAsync = ref.watch(binancePriceProvider(BinanceSymbol.btcusdt));
     final usdtPremiumAsync = ref.watch(usdtPremiumProvider);
 
     if (btcPriceAsync.isLoading || usdtPremiumAsync.isLoading) {
