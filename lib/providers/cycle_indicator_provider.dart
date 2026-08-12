@@ -17,8 +17,8 @@ import 'package:btc_horizon/providers/binance_price_provider.dart';
 
 const kValuationWeight = 0.4;
 const kCycleTimingWeight = 0.3;
-const kTrendWeight = 0.1;
-const kSentimentWeight = 0.2;
+const kTrendWeight = 0.15;
+const kSentimentWeight = 0.15;
 
 final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
   final valuationList = <WeightedScore>[];
@@ -31,7 +31,7 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
   // ================================
 
   // 1-1. MVRV Z-Score
-  /*
+
   final mvrvAsync = ref.watch(mvrvZScoreProvider);
   final IndicatorSummaryModel mvrvIndicator;
 
@@ -62,7 +62,7 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
     );
 
     valuationList.add(WeightedScore(score: mvrvScore, weight: 1.0));
-  }*/
+  }
 
   // ================================
   // 2. Cycle Timing
@@ -80,42 +80,67 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
   const weeklyRequest = BinanceKlineRequestModel(
     symbol: BinanceSymbol.btcusdt,
     interval: BinanceKlineInterval.oneWeek,
-    limit: 210,
+    limit: 2500,
+  );
+  const monthlyRequest = BinanceKlineRequestModel(
+    symbol: BinanceSymbol.btcusdt,
+    interval: BinanceKlineInterval.oneMonth,
+    limit: 500,
   );
   final weeklyBtcKlineAsync = ref.watch(binanceKlineProvider(weeklyRequest));
+  final monthlyBtcKlineAsync = ref.watch(binanceKlineProvider(monthlyRequest));
   final btcPriceAsync = ref.watch(binancePriceProvider(BinanceSymbol.btcusdt));
-  final IndicatorSummaryModel klineIndicator;
+  final IndicatorSummaryModel trendIndicator;
 
-  if (weeklyBtcKlineAsync.isLoading || btcPriceAsync.isLoading) {
-    klineIndicator = const IndicatorSummaryModel(
-      label: 'Kline',
+  if (weeklyBtcKlineAsync.isLoading || monthlyBtcKlineAsync.isLoading || btcPriceAsync.isLoading) {
+    trendIndicator = const IndicatorSummaryModel(
+      label: '1년 이평선과의 거리',
       value: '로딩 중...',
       score: null,
       status: null,
     );
-  } else if (weeklyBtcKlineAsync.hasError || btcPriceAsync.hasError) {
-    klineIndicator = const IndicatorSummaryModel(
-      label: 'Kline',
+  } else if (weeklyBtcKlineAsync.hasError ||
+      monthlyBtcKlineAsync.hasError ||
+      btcPriceAsync.hasError) {
+    trendIndicator = const IndicatorSummaryModel(
+      label: '1년 이평선과의 거리',
       value: '에러 발생',
       score: null,
       status: null,
     );
   } else {
     final weeklyBtcKlines = weeklyBtcKlineAsync.requireValue;
-    final weeklySma52Values = calculateSma(klines: weeklyBtcKlines, period: 52);
-    final sma52 = weeklySma52Values.last!;
+    final monthlyBtcKlines = monthlyBtcKlineAsync.requireValue;
     final btcPrice = btcPriceAsync.requireValue;
-    final gap = calculateDifferencePercent(currentPrice: btcPrice, movingAverage: sma52);
-    final maPosition = calculateMaPositionStatus(currentPrice: btcPrice, maValue: sma52);
-    final maPositionScore = getMaPositionScore(maPosition: maPosition);
-    final maPositionStatus = getMaPositionDescription(maPosition: maPosition);
-    klineIndicator = IndicatorSummaryModel(
-      label: '1년 이평선과의 거리',
-      value: '${gap.toStringAsFixed(2)}%',
-      score: maPositionScore,
-      status: maPositionStatus,
+
+    final weeklySmaValues = calculateSma(klines: weeklyBtcKlines, period: 52);
+    final weeklyEmaValues = calculateEma(klines: weeklyBtcKlines, period: 10);
+    final monthlyEmaValues = calculateEma(klines: monthlyBtcKlines, period: 57);
+
+    final weeklySma52 = weeklySmaValues.last!;
+    final weeklyEma10 = weeklyEmaValues.last!;
+    final monthlyEma57 = monthlyEmaValues.last!;
+
+    final weeklySma52DeviationPercent = calculateDifferencePercent(
+      currentPrice: btcPrice,
+      movingAverage: weeklySma52,
     );
-    trendList.add(WeightedScore(score: null, weight: 1.0));
+
+    final trendStatus = calculateTrendStatus(
+      currentBtcPrice: btcPrice,
+      trendBaseline: weeklySma52,
+      upperTrendBoundary: weeklyEma10,
+      lowerTrendBoundary: monthlyEma57,
+    );
+
+    trendIndicator = IndicatorSummaryModel(
+      label: '1년 이평선과의 거리',
+      value: '${weeklySma52DeviationPercent.toStringAsFixed(2)}%',
+      score: trendStatus.score,
+      status: trendStatus.description,
+    );
+
+    trendList.add(WeightedScore(score: trendStatus.score, weight: 1.0));
   }
 
   // ================================
@@ -154,7 +179,7 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
       status: fearGreedStatus,
     );
 
-    sentimentList.add(WeightedScore(score: fearGreedScore, weight: 0.8));
+    sentimentList.add(WeightedScore(score: fearGreedScore, weight: 0.9));
   }
 
   // 4-2. Funding Rate
@@ -185,7 +210,7 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
       status: fundingRateStatus,
     );
 
-    sentimentList.add(WeightedScore(score: fundingRateScore, weight: 0.2));
+    sentimentList.add(WeightedScore(score: fundingRateScore, weight: 0.1));
   }
 
   // ================================
@@ -193,13 +218,14 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
   // ================================
   final valuationScore = calculateCategoryScore(indicatorList: valuationList);
   final cycleTimingScore = calculateCategoryScore(indicatorList: cycleTimingList);
+  final trendScore = calculateCategoryScore(indicatorList: trendList);
   final sentimentScore = calculateCategoryScore(indicatorList: sentimentList);
 
   final valuationModel = CycleIndicatorModel(
     title: '가치평가',
     score: valuationScore,
     weight: kValuationWeight,
-    indicators: [], //[mvrvIndicator],
+    indicators: [mvrvIndicator],
   );
 
   final cycleTimingModel = CycleIndicatorModel(
@@ -211,9 +237,9 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
 
   final trendModel = CycleIndicatorModel(
     title: '추세',
-    score: null,
+    score: trendScore,
     weight: kTrendWeight,
-    indicators: [klineIndicator],
+    indicators: [trendIndicator],
   );
 
   final sentimentModel = CycleIndicatorModel(

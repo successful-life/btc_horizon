@@ -1,4 +1,4 @@
-import 'package:btc_horizon/enums/ma_position.dart';
+import 'package:btc_horizon/enums/trend_status.dart';
 import 'package:btc_horizon/models/binance_kline_model.dart';
 
 List<double?> calculateSma({required List<BinanceKlineModel> klines, required int period}) {
@@ -31,63 +31,100 @@ List<double?> calculateSma({required List<BinanceKlineModel> klines, required in
   return smaValues;
 }
 
+List<double?> calculateEma({required List<BinanceKlineModel> klines, required int period}) {
+  if (period <= 0) {
+    throw ArgumentError('period는 1 이상이어야 합니다.');
+  }
+
+  if (klines.length < period) {
+    return List<double?>.filled(klines.length, null);
+  }
+
+  final emaValues = List<double?>.filled(klines.length, null);
+
+  // EMA smoothing factor
+  final alpha = 2 / (period + 1);
+
+  // 첫 EMA는 SMA로 초기화
+  double initialSum = 0;
+
+  for (int i = 0; i < period; i++) {
+    initialSum += klines[i].close;
+  }
+
+  emaValues[period - 1] = initialSum / period;
+
+  // 이후 EMA 계산
+  for (int i = period; i < klines.length; i++) {
+    final previousEma = emaValues[i - 1]!;
+
+    emaValues[i] = (klines[i].close * alpha) + (previousEma * (1 - alpha));
+  }
+
+  return emaValues;
+}
+
+List<double?> calculateSsma({required List<BinanceKlineModel> klines, required int period}) {
+  if (period <= 0) {
+    throw ArgumentError('period는 1 이상이어야 합니다.');
+  }
+
+  if (klines.length < period) {
+    return List<double?>.filled(klines.length, null);
+  }
+
+  final ssmaValues = List<double?>.filled(klines.length, null);
+
+  // 첫 번째 SSMA는 SMA로 초기화
+  double initialSum = 0;
+
+  for (int i = 0; i < period; i++) {
+    initialSum += klines[i].close;
+  }
+
+  ssmaValues[period - 1] = initialSum / period;
+
+  // 이후부터 이전 SSMA를 이용해 계산
+  for (int i = period; i < klines.length; i++) {
+    final previousSsma = ssmaValues[i - 1]!;
+
+    ssmaValues[i] = ((previousSsma * (period - 1)) + klines[i].close) / period;
+  }
+
+  return ssmaValues;
+}
+
 double calculateDifferencePercent({required double currentPrice, required double movingAverage}) {
   return ((currentPrice - movingAverage) / movingAverage) * 100;
 }
 
-/// 특정 이동평균선(MA) 기준 현재 가격의 위치 및 근접도를 6단계로 분석하여 추세 점수를 계산합니다. (임시)
-MaPosition calculateMaPositionStatus({
-  required double currentPrice,
-  required double maValue,
-  double nearThresholdPercent = 0.03, // 근접 버퍼 (기본값 3%)
-  double extremeThresholdPercent = 0.3, // 과열/투매 버퍼 (기본값 30%)
+TrendStatus calculateTrendStatus({
+  required double currentBtcPrice,
+  required double trendBaseline, // 52w SMA
+  required double upperTrendBoundary, // 10w EMA
+  required double lowerTrendBoundary, // 57M EMA
 }) {
-  // 1. 과열 및 근접 밴드(한계선) 계산
-  double extremeUpperBand = maValue * (1 + extremeThresholdPercent);
-  double nearUpperBand = maValue * (1 + nearThresholdPercent);
+  const buffer = 0.002;
+  double centerRangeTop = trendBaseline + (trendBaseline * buffer);
+  double centerRangeBottom = trendBaseline - (trendBaseline * buffer);
+  double bottomRangeTop = lowerTrendBoundary + (lowerTrendBoundary * buffer);
 
-  double nearLowerBand = maValue * (1 - nearThresholdPercent);
-  double extremeLowerBand = maValue * (1 - extremeThresholdPercent);
-
-  if (currentPrice > extremeUpperBand) {
-    // 상태 1: 과매수/과열 (이평선과 지나치게 멀어짐, FOMO 구간)
-    return MaPosition.extremeAbove;
-  } else if (currentPrice > nearUpperBand) {
-    // 상태 2: 이평선 위
-    return MaPosition.above;
-  } else if (currentPrice > maValue) {
-    // 상태 3: 이평 상단 근접
-    return MaPosition.nearAbove;
-  } else if (currentPrice >= nearLowerBand) {
-    // 상태 4: 이평 하단 근접
-    return MaPosition.nearBelow;
-  } else if (currentPrice >= extremeLowerBand) {
-    // 상태 5: 이평선 아래
-    return MaPosition.below;
+  if (currentBtcPrice > centerRangeTop) {
+    // 기준선 위, 상승 추세
+    if (currentBtcPrice > upperTrendBoundary) {
+      return TrendStatus.veryBullish;
+    } else {
+      return TrendStatus.bullish;
+    }
+  } else if (currentBtcPrice < centerRangeBottom) {
+    // 기준선 아래, 하락 추세
+    if (currentBtcPrice > bottomRangeTop) {
+      return TrendStatus.bearish;
+    } else {
+      return TrendStatus.bottomRange;
+    }
   } else {
-    // 상태 6: 과매도/투매 (이평선과 지나치게 멀어짐, 패닉셀 구간)
-    return MaPosition.extremeBelow;
+    // 기준선 부근
+    return TrendStatus.transition;
   }
-}
-
-double getMaPositionScore({required MaPosition maPosition}) {
-  return switch (maPosition) {
-    MaPosition.extremeAbove => 95,
-    MaPosition.above => 75,
-    MaPosition.nearAbove => 55,
-    MaPosition.nearBelow => 45,
-    MaPosition.below => 25,
-    MaPosition.extremeBelow => 5,
-  };
-}
-
-String getMaPositionDescription({required MaPosition maPosition}) {
-  return switch (maPosition) {
-    MaPosition.extremeAbove => '1년 이평선 위로 매우 멀어진 상태',
-    MaPosition.above => '1년 이평선 위로 멀어진 상태',
-    MaPosition.nearAbove => '1년 이평선보다 약간 위에 있는 상태',
-    MaPosition.nearBelow => '1년 이평선보다 약간 아래에 있는 상태',
-    MaPosition.below => '1년 이평선 아래로 멀어진 상태',
-    MaPosition.extremeBelow => '1년 이평선 아래로 매우 멀어진 상태',
-  };
 }
