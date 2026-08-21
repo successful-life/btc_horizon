@@ -100,31 +100,53 @@ double calculateDifferencePercent({required double currentPrice, required double
 
 TrendStatus calculateTrendStatus({
   required double currentBtcPrice,
-  required double trendBaseline, // 52w SMA
-  required double upperTrendBoundary, // 10w EMA
-  required double lowerTrendBoundary, // 57M EMA
+  required double upperTrendThreshold,
+  required double trendBaseline,
+  required double lowerTrendThreshold,
+  required double bottomRangeBoundary,
 }) {
-  const buffer = 0.002;
-  double centerRangeTop = trendBaseline + (trendBaseline * buffer);
-  double centerRangeBottom = trendBaseline - (trendBaseline * buffer);
-  double bottomRangeTop = lowerTrendBoundary + (lowerTrendBoundary * buffer);
+  // 52W 기준선 주변의 전환 구간
+  const centerBuffer = 0.015; // 1.5%
 
+  // 52W 기준선 중심 버퍼
+  final centerRangeTop = trendBaseline * (1 + centerBuffer);
+  final centerRangeBottom = trendBaseline * (1 - centerBuffer);
+
+  // ========================================
+  // 1. 상승 추세 영역
+  // ========================================
   if (currentBtcPrice > centerRangeTop) {
-    // 기준선 위, 상승 추세
-    if (currentBtcPrice > upperTrendBoundary) {
+    // 상단 기준선까지 상회
+    if (currentBtcPrice >= upperTrendThreshold) {
       return TrendStatus.veryBullish;
-    } else {
-      return TrendStatus.bullish;
     }
-  } else if (currentBtcPrice < centerRangeBottom) {
-    // 기준선 아래, 하락 추세
-    if (currentBtcPrice > bottomRangeTop) {
-      return TrendStatus.bearish;
-    } else {
-      return TrendStatus.bottomRange;
-    }
-  } else {
-    // 기준선 부근
-    return TrendStatus.transition;
+
+    // 52W 기준선은 상회하지만
+    // 상단 기준선까지는 도달하지 못한 상태
+    return TrendStatus.bullish;
   }
+
+  // ========================================
+  // 2. 하락 추세 영역
+  // ========================================
+  if (currentBtcPrice < centerRangeBottom) {
+    // 아직 하락 깊이 기준선까지 내려가지 않음
+    if (currentBtcPrice >= lowerTrendThreshold) {
+      return TrendStatus.bearish;
+    }
+
+    // 하락 깊이 기준선은 하회했지만
+    // 바닥권 기준선까지는 내려가지 않음
+    if (currentBtcPrice >= bottomRangeBoundary) {
+      return TrendStatus.deepBearish;
+    }
+
+    // 바닥권 기준선 이하
+    return TrendStatus.bottomRange;
+  }
+
+  // ========================================
+  // 3. 52W 기준선 부근
+  // ========================================
+  return TrendStatus.transition;
 }

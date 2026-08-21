@@ -368,7 +368,7 @@ double calculateCyclePositionScore({required CycleIndicators indicators}) {
   // 4개의 카테고리 중 score가 null인 것은 0점으로 설정
   final valuationScore = (indicators.valuation.score ?? 0) * indicators.valuation.weight;
   final cycleTimingScore = (indicators.cycleTiming.score ?? 0) * indicators.cycleTiming.weight;
-  final trendScore = (indicators.trend.score ?? 0) * indicators.trend.weight;
+  final trendScore = (indicators.trend.summary.score ?? 0) * indicators.trend.summary.weight;
   final sentimentScore = (indicators.sentiment.score ?? 0) * indicators.sentiment.weight;
 
   final cyclePositionScore = (valuationScore + cycleTimingScore + trendScore + sentimentScore);

@@ -1,4 +1,10 @@
+import 'package:btc_horizon/enums/cycle_indicator_type.dart';
 import 'package:btc_horizon/models/cycle_indicator_model.dart';
+import 'package:btc_horizon/models/trend_chart_data_model.dart';
+import 'package:btc_horizon/screens/trend_detail_screen.dart';
+import 'package:btc_horizon/widgets/indicator_table.dart';
+import 'package:btc_horizon/widgets/trend_chart.dart';
+import 'package:btc_horizon/widgets/trend_indicator_section.dart';
 import 'package:flutter/material.dart';
 
 class CycleIndicatorDetailScreen extends StatelessWidget {
@@ -53,96 +59,10 @@ class CycleIndicatorDetailScreen extends StatelessWidget {
               const SizedBox(height: 20),
 
               // 2. Indicator
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  children: [
-                    const Row(
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: Text('지표', style: TextStyle(fontWeight: FontWeight.w600)),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            '현재 값',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            '환산 점수',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            '상태',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Divider(),
-
-                    for (final indicator in cycleIndicatorModel.indicators) ...[
-                      Row(
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: Text(
-                              indicator.label,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              indicator.value,
-                              textAlign: TextAlign.center,
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              indicator.score == null
-                                  ? '-'
-                                  : '${indicator.score!.toStringAsFixed(0)}/100',
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              indicator.status ?? '-',
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Divider(),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
+              if (cycleIndicatorModel.type == CycleIndicatorType.trend)
+                TrendIndicatorSection(indicators: cycleIndicatorModel.indicators)
+              else
+                IndicatorTable(indicators: cycleIndicatorModel.indicators),
 
               // 3. Analysis
               const Text('해석 영역(임시)'),

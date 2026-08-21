@@ -1,9 +1,10 @@
 import 'package:btc_horizon/models/cycle_indicator_model.dart';
+import 'package:btc_horizon/models/trend_detail_model.dart';
 
 class CycleIndicators {
   final CycleIndicatorModel valuation;
   final CycleIndicatorModel cycleTiming;
-  final CycleIndicatorModel trend;
+  final TrendDetailModel trend;
   final CycleIndicatorModel sentiment;
 
   CycleIndicators({

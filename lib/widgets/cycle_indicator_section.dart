@@ -1,5 +1,6 @@
 import 'package:btc_horizon/providers/cycle_indicator_provider.dart';
 import 'package:btc_horizon/screens/cycle_indicator_detail_screen.dart';
+import 'package:btc_horizon/screens/trend_detail_screen.dart';
 import 'package:btc_horizon/widgets/cycle_indicator_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -71,8 +72,8 @@ class CycleIndicatorSection extends ConsumerWidget {
                 Expanded(
                   child: CycleIndicatorCard(
                     icon: Icons.show_chart,
-                    title: indicators.trend.title,
-                    scoreText: indicators.trend.score?.round().toString() ?? '-',
+                    title: indicators.trend.summary.title,
+                    scoreText: indicators.trend.summary.score?.round().toString() ?? '-',
                     valueColor: Colors.indigo.shade900,
                     bgColor: const Color(0xFFE1E6FF),
                     iconColor: Colors.indigo.shade800,
@@ -80,8 +81,8 @@ class CycleIndicatorSection extends ConsumerWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) =>
-                              CycleIndicatorDetailScreen(cycleIndicatorModel: indicators.trend),
+                          builder: (_) => TrendDetailScreen(trendDetailModel: indicators.trend),
+                          //CycleIndicatorDetailScreen(cycleIndicatorModel: indicators.trend),
                         ),
                       );
                     },
