@@ -1,4 +1,3 @@
-import 'package:btc_horizon/models/trend_chart_data_model.dart';
 import 'package:btc_horizon/models/trend_detail_model.dart';
 import 'package:btc_horizon/widgets/trend_chart.dart';
 import 'package:btc_horizon/widgets/trend_indicator_section.dart';

@@ -1,4 +1,3 @@
-import 'package:btc_horizon/models/cycle_indicator_model.dart';
 import 'package:btc_horizon/models/indicator_summary_model.dart';
 import 'package:flutter/material.dart';
 

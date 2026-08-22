@@ -1,9 +1,6 @@
 import 'package:btc_horizon/enums/cycle_indicator_type.dart';
 import 'package:btc_horizon/models/cycle_indicator_model.dart';
-import 'package:btc_horizon/models/trend_chart_data_model.dart';
-import 'package:btc_horizon/screens/trend_detail_screen.dart';
 import 'package:btc_horizon/widgets/indicator_table.dart';
-import 'package:btc_horizon/widgets/trend_chart.dart';
 import 'package:btc_horizon/widgets/trend_indicator_section.dart';
 import 'package:flutter/material.dart';
 

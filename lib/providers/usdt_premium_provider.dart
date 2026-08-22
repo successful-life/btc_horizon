@@ -1,7 +1,7 @@
 import 'package:btc_horizon/models/usdt_premium_model.dart';
 import 'package:btc_horizon/providers/bithumb_price_provider.dart';
 import 'package:btc_horizon/providers/exchange_rate_provider.dart';
-import 'package:btc_horizon/providers/ubpit_price_provider.dart';
+import 'package:btc_horizon/providers/upbit_price_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 double _calculatePremiumPercent({required double targetPrice, required double basePrice}) {

@@ -7,27 +7,21 @@ import 'package:btc_horizon/models/indicator_summary_model.dart';
 import 'package:btc_horizon/models/trend_chart_data_model.dart';
 import 'package:btc_horizon/models/trend_detail_model.dart';
 import 'package:btc_horizon/models/weighted_score_model.dart';
-import 'package:btc_horizon/providers/binance_kline_provider.dart';
 import 'package:btc_horizon/providers/fear_greed_provider.dart';
 import 'package:btc_horizon/providers/funding_rate_provider.dart';
 import 'package:btc_horizon/providers/mvrv_z_score_provider.dart';
+import 'package:btc_horizon/providers/trend_provider.dart';
 import 'package:btc_horizon/utils/cycle_indicator_calculator.dart';
-import 'package:btc_horizon/utils/trend_calculator.dart';
-import 'package:btc_horizon/utils/trend_utils.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:btc_horizon/enums/binance_interval.dart';
-import 'package:btc_horizon/providers/binance_price_provider.dart';
+
+const kValuationWeight = 0.35;
+const kCycleTimingWeight = 0.3;
+const kTrendWeight = 0.25;
+const kSentimentWeight = 0.1;
 
 final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
-  const kValuationWeight = 0.4;
-  const kCycleTimingWeight = 0.3;
-  const kTrendWeight = 0.15;
-  const kSentimentWeight = 0.15;
-
   final valuationList = <WeightedScore>[];
   final cycleTimingList = <WeightedScore>[];
-  final trendList = <WeightedScore>[];
   final sentimentList = <WeightedScore>[];
 
   // ================================
@@ -80,185 +74,30 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
   // ================================
   // 3. Trend
   // ================================
-  // 3-1. Kline
-  final TrendChartDataModel chartData;
-  const emptyChartData = TrendChartDataModel(
-    price: [],
-    trendBaseline: [],
-    upperTrendThreshold: [],
-    lowerTrendThreshold: [],
-    bottomRangeBoundary: [],
-  );
+  final trendAsync = ref.watch(trendProvider(kTrendWeight));
 
-  const weeklyRequest = BinanceKlineRequestModel(
-    symbol: BinanceSymbol.btcusdt,
-    interval: BinanceKlineInterval.oneWeek,
-    limit: 2500,
-  );
-  final weeklyBtcKlineAsync = ref.watch(binanceKlineProvider(weeklyRequest));
-  final btcPriceAsync = ref.watch(binancePriceProvider(BinanceSymbol.btcusdt));
-  final IndicatorSummaryModel trendBaselineIndicator,
-      upperTrendThresholdIndicator,
-      lowerTrendThresholdIndicator,
-      bottomRangeBoundaryIndicator;
+  final TrendDetailModel trendDetailModel;
 
-  if (weeklyBtcKlineAsync.isLoading || btcPriceAsync.isLoading) {
-    trendBaselineIndicator = const IndicatorSummaryModel(
-      label: '',
-      value: '로딩 중...',
-      score: null,
-      status: null,
-    );
-    upperTrendThresholdIndicator = const IndicatorSummaryModel(
-      label: '중·단기 상승 추세선',
-      value: '로딩 중...',
-      score: null,
-      status: null,
-    );
-    lowerTrendThresholdIndicator = const IndicatorSummaryModel(
-      label: '깊은 하락 영역',
-      value: '로딩 중...',
-      score: null,
-      status: null,
-    );
-    bottomRangeBoundaryIndicator = const IndicatorSummaryModel(
-      label: '장기 저점 영역',
-      value: '로딩 중...',
-      score: null,
-      status: null,
-    );
-
-    chartData = emptyChartData;
-  } else if (weeklyBtcKlineAsync.hasError || btcPriceAsync.hasError) {
-    trendBaselineIndicator = const IndicatorSummaryModel(
-      label: '1년 이평선과의 거리',
-      value: '에러',
-      score: null,
-      status: null,
-    );
-    upperTrendThresholdIndicator = const IndicatorSummaryModel(
-      label: '중·단기 추세 기준선',
-      value: '에러',
-      score: null,
-      status: null,
-    );
-    lowerTrendThresholdIndicator = const IndicatorSummaryModel(
-      label: '깊은 하락 영역',
-      value: '에러',
-      score: null,
-      status: null,
-    );
-    bottomRangeBoundaryIndicator = const IndicatorSummaryModel(
-      label: '장기 저점 영역',
-      value: '에러',
-      score: null,
-      status: null,
-    );
-
-    chartData = emptyChartData;
+  if (trendAsync.hasValue) {
+    trendDetailModel = trendAsync.requireValue;
   } else {
-    final weeklyBtcKlines = weeklyBtcKlineAsync.requireValue;
-    final btcPrice = btcPriceAsync.requireValue;
-
-    final trendBaselineValues = calculateSma(klines: weeklyBtcKlines, period: 52);
-    final upperTrendThresholdValues = calculateEma(klines: weeklyBtcKlines, period: 10);
-    final lowerTrendThresholdValues = calculateSsma(klines: weeklyBtcKlines, period: 100);
-    final bottomRangeBoundaryValues = calculateEma(klines: weeklyBtcKlines, period: 280);
-
-    final trendBaseline = trendBaselineValues.last!;
-    final upperTrendThreshold = upperTrendThresholdValues.last!;
-    final lowerTrendThreshold = lowerTrendThresholdValues.last!;
-    final bottomRangeBoundary = bottomRangeBoundaryValues.last!;
-
-    final trendBaselineDeviationPercent = calculateDifferencePercent(
-      currentPrice: btcPrice,
-      movingAverage: trendBaseline,
+    trendDetailModel = TrendDetailModel(
+      summary: CycleIndicatorModel(
+        type: CycleIndicatorType.trend,
+        title: '추세',
+        score: null,
+        weight: kTrendWeight,
+        indicators: const [],
+      ),
+      chartData: const TrendChartDataModel(
+        price: [],
+        trendBaseline: [],
+        upperTrendThreshold: [],
+        lowerTrendThreshold: [],
+        bottomRangeBoundary: [],
+      ),
     );
-    final upperTrendThresholdDeviationPercent = calculateDifferencePercent(
-      currentPrice: btcPrice,
-      movingAverage: upperTrendThreshold,
-    );
-    final lowerTrendThresholdDeviationPercent = calculateDifferencePercent(
-      currentPrice: btcPrice,
-      movingAverage: lowerTrendThreshold,
-    );
-    final bottomRangeBoundaryDeviationPercent = calculateDifferencePercent(
-      currentPrice: btcPrice,
-      movingAverage: bottomRangeBoundary,
-    );
-
-    final trendStatus = calculateTrendStatus(
-      currentBtcPrice: btcPrice,
-      trendBaseline: trendBaseline,
-      upperTrendThreshold: upperTrendThreshold,
-      lowerTrendThreshold: lowerTrendThreshold,
-      bottomRangeBoundary: bottomRangeBoundary,
-    );
-
-    trendBaselineIndicator = IndicatorSummaryModel(
-      label: '장기 추세 기준선',
-      value: '${trendBaselineDeviationPercent.toStringAsFixed(2)}%',
-      score: null,
-      status: getPriceRelationStatus(trendBaselineDeviationPercent),
-    );
-
-    upperTrendThresholdIndicator = IndicatorSummaryModel(
-      label: '중·단기 상승 추세선',
-      value: '${upperTrendThresholdDeviationPercent.toStringAsFixed(2)}%',
-      score: null,
-      status: getPriceRelationStatus(upperTrendThresholdDeviationPercent),
-    );
-
-    lowerTrendThresholdIndicator = IndicatorSummaryModel(
-      label: '하락 깊이 기준선',
-      value: '${lowerTrendThresholdDeviationPercent.toStringAsFixed(2)}%',
-      score: null,
-      status: getPriceRelationStatus(lowerTrendThresholdDeviationPercent),
-    );
-
-    bottomRangeBoundaryIndicator = IndicatorSummaryModel(
-      label: '장기 저점 영역 기준선',
-      value: '${bottomRangeBoundaryDeviationPercent.toStringAsFixed(2)}%',
-      score: null,
-      status: getPriceRelationStatus(bottomRangeBoundaryDeviationPercent),
-    );
-
-    // 2. Chart data
-    final pricePoints = weeklyBtcKlines
-        .map((kline) => TrendChartPoint(time: kline.openTime, value: kline.close))
-        .toList();
-
-    final trendBaselinePoints = buildTrendChartPoints(
-      klines: weeklyBtcKlines,
-      values: trendBaselineValues,
-    );
-
-    final upperTrendThresholdPoints = buildTrendChartPoints(
-      klines: weeklyBtcKlines,
-      values: upperTrendThresholdValues,
-    );
-
-    final lowerTrendThresholdPoints = buildTrendChartPoints(
-      klines: weeklyBtcKlines,
-      values: lowerTrendThresholdValues,
-    );
-
-    final bottomRangeBoundaryPoints = buildTrendChartPoints(
-      klines: weeklyBtcKlines,
-      values: bottomRangeBoundaryValues,
-    );
-
-    chartData = TrendChartDataModel(
-      price: pricePoints,
-      trendBaseline: trendBaselinePoints,
-      upperTrendThreshold: upperTrendThresholdPoints,
-      lowerTrendThreshold: lowerTrendThresholdPoints,
-      bottomRangeBoundary: bottomRangeBoundaryPoints,
-    );
-
-    trendList.add(WeightedScore(score: trendStatus.score, weight: 1.0));
   }
-
   // ================================
   // 4. Sentiment
   // ================================
@@ -334,7 +173,7 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
   // ================================
   final valuationScore = calculateCategoryScore(indicatorList: valuationList);
   final cycleTimingScore = calculateCategoryScore(indicatorList: cycleTimingList);
-  final trendScore = calculateCategoryScore(indicatorList: trendList);
+  //final trendScore = calculateCategoryScore(indicatorList: trendList);
   final sentimentScore = calculateCategoryScore(indicatorList: sentimentList);
 
   final valuationModel = CycleIndicatorModel(
@@ -352,20 +191,6 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
     weight: kCycleTimingWeight,
     indicators: [timingRangeIndicator],
   );
-
-  final trendModel = CycleIndicatorModel(
-    type: CycleIndicatorType.trend,
-    title: '추세',
-    score: trendScore,
-    weight: kTrendWeight,
-    indicators: [
-      trendBaselineIndicator,
-      upperTrendThresholdIndicator,
-      lowerTrendThresholdIndicator,
-      bottomRangeBoundaryIndicator,
-    ],
-  );
-  final trendDetailModel = TrendDetailModel(summary: trendModel, chartData: chartData);
 
   final sentimentModel = CycleIndicatorModel(
     type: CycleIndicatorType.sentiment,
