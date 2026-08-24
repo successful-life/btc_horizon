@@ -1,6 +1,4 @@
-import 'package:btc_horizon/enums/binance_symbol.dart';
 import 'package:btc_horizon/enums/cycle_indicator_type.dart';
-import 'package:btc_horizon/models/binance_kline_request_model.dart';
 import 'package:btc_horizon/models/cycle_indicator_model.dart';
 import 'package:btc_horizon/models/cycle_indicators.dart';
 import 'package:btc_horizon/models/indicator_summary_model.dart';
@@ -29,7 +27,6 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
   // ================================
 
   // 1-1. MVRV Z-Score
-
   final mvrvAsync = ref.watch(mvrvZScoreProvider);
   final IndicatorSummaryModel mvrvIndicator;
 
@@ -74,7 +71,7 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
   // ================================
   // 3. Trend
   // ================================
-  final trendAsync = ref.watch(trendProvider(kTrendWeight));
+  final trendAsync = ref.watch(trendProvider);
 
   final TrendDetailModel trendDetailModel;
 

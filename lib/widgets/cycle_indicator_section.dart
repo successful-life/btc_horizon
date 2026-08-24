@@ -1,3 +1,4 @@
+import 'package:btc_horizon/enums/cycle_indicator_type.dart';
 import 'package:btc_horizon/providers/cycle_indicator_provider.dart';
 import 'package:btc_horizon/screens/cycle_indicator_detail_screen.dart';
 import 'package:btc_horizon/screens/trend_detail_screen.dart';
@@ -35,7 +36,7 @@ class CycleIndicatorSection extends ConsumerWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) =>
-                              CycleIndicatorDetailScreen(cycleIndicatorModel: indicators.valuation),
+                              const CycleIndicatorDetailScreen(type: CycleIndicatorType.valuation),
                         ),
                       );
                     },
@@ -55,8 +56,8 @@ class CycleIndicatorSection extends ConsumerWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => CycleIndicatorDetailScreen(
-                            cycleIndicatorModel: indicators.cycleTiming,
+                          builder: (_) => const CycleIndicatorDetailScreen(
+                            type: CycleIndicatorType.cycleTiming,
                           ),
                         ),
                       );
@@ -80,10 +81,7 @@ class CycleIndicatorSection extends ConsumerWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => TrendDetailScreen(trendDetailModel: indicators.trend),
-                          //CycleIndicatorDetailScreen(cycleIndicatorModel: indicators.trend),
-                        ),
+                        MaterialPageRoute(builder: (_) => const TrendDetailScreen()),
                       );
                     },
                   ),
@@ -103,7 +101,7 @@ class CycleIndicatorSection extends ConsumerWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) =>
-                              CycleIndicatorDetailScreen(cycleIndicatorModel: indicators.sentiment),
+                              const CycleIndicatorDetailScreen(type: CycleIndicatorType.sentiment),
                         ),
                       );
                     },

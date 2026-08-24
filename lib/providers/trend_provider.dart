@@ -4,13 +4,13 @@ import 'package:btc_horizon/models/cycle_indicator_model.dart';
 import 'package:btc_horizon/models/indicator_summary_model.dart';
 import 'package:btc_horizon/models/trend_detail_model.dart';
 import 'package:btc_horizon/providers/binance_price_provider.dart';
+import 'package:btc_horizon/providers/cycle_indicator_provider.dart';
 import 'package:btc_horizon/providers/weekly_trend_data_provider.dart';
 import 'package:btc_horizon/utils/trend_calculator.dart';
 import 'package:btc_horizon/utils/trend_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final trendProvider = Provider.family<AsyncValue<TrendDetailModel>, double>((ref, trendWeight) {
-  print('⚡ trendProvider 실행');
+final trendProvider = Provider<AsyncValue<TrendDetailModel>>((ref) {
   final weeklyTrendDataAsync = ref.watch(weeklyTrendDataProvider);
   final btcPriceAsync = ref.watch(binancePriceProvider(BinanceSymbol.btcusdt));
 
@@ -94,7 +94,7 @@ final trendProvider = Provider.family<AsyncValue<TrendDetailModel>, double>((ref
     type: CycleIndicatorType.trend,
     title: '추세',
     score: trendStatus.score,
-    weight: trendWeight,
+    weight: kTrendWeight,
     indicators: [
       trendBaselineIndicator,
       upperTrendThresholdIndicator,

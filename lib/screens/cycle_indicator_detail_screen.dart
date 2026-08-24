@@ -1,16 +1,25 @@
 import 'package:btc_horizon/enums/cycle_indicator_type.dart';
-import 'package:btc_horizon/models/cycle_indicator_model.dart';
+import 'package:btc_horizon/providers/cycle_indicator_provider.dart';
 import 'package:btc_horizon/widgets/indicator_table.dart';
-import 'package:btc_horizon/widgets/trend_indicator_section.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class CycleIndicatorDetailScreen extends StatelessWidget {
-  final CycleIndicatorModel cycleIndicatorModel;
+class CycleIndicatorDetailScreen extends ConsumerWidget {
+  final CycleIndicatorType type;
 
-  const CycleIndicatorDetailScreen({super.key, required this.cycleIndicatorModel});
+  const CycleIndicatorDetailScreen({super.key, required this.type});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final indicators = ref.watch(cycleIndicatorProvider);
+
+    final cycleIndicatorModel = switch (type) {
+      CycleIndicatorType.valuation => indicators.valuation,
+      CycleIndicatorType.cycleTiming => indicators.cycleTiming,
+      CycleIndicatorType.sentiment => indicators.sentiment,
+      CycleIndicatorType.trend => throw StateError('Trend uses TrendDetailScreen.'),
+    };
+
     final categoryScoreText = cycleIndicatorModel.score == null
         ? '-'
         : cycleIndicatorModel.score!.toStringAsFixed(1);
@@ -56,10 +65,7 @@ class CycleIndicatorDetailScreen extends StatelessWidget {
               const SizedBox(height: 20),
 
               // 2. Indicator
-              if (cycleIndicatorModel.type == CycleIndicatorType.trend)
-                TrendIndicatorSection(indicators: cycleIndicatorModel.indicators)
-              else
-                IndicatorTable(indicators: cycleIndicatorModel.indicators),
+              IndicatorTable(indicators: cycleIndicatorModel.indicators),
 
               // 3. Analysis
               const Text('해석 영역(임시)'),

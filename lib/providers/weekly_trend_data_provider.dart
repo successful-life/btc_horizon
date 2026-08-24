@@ -9,8 +9,6 @@ import 'package:btc_horizon/utils/trend_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final weeklyTrendDataProvider = Provider<AsyncValue<WeeklyTrendDataModel>>((ref) {
-  print('🔥 weeklyTrendDataProvider 실행');
-
   const weeklyBtcKlineRequest = BinanceKlineRequestModel(
     symbol: BinanceSymbol.btcusdt,
     interval: BinanceKlineInterval.oneWeek,
