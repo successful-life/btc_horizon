@@ -8,6 +8,7 @@ class CyclePosition extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cyclePosition = ref.watch(cyclePositionProvider);
+    final score = cyclePosition.score;
 
     return Container(
       width: double.infinity,
@@ -22,7 +23,7 @@ class CyclePosition extends ConsumerWidget {
           Text(cyclePosition.title, style: TextStyle(color: Colors.white)),
           const SizedBox(height: 8),
           Text(
-            '${cyclePosition.score.toStringAsFixed(1)} / 100',
+            score == null ? '- / 100' : '${score.toStringAsFixed(1)} / 100',
             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 8),

@@ -8,8 +8,20 @@ final cyclePositionProvider = Provider<CyclePositionModel>((ref) {
   final indicators = ref.watch(cycleIndicatorProvider);
 
   final cyclePositionScore = calculateCyclePositionScore(indicators: indicators);
+
+  if (cyclePositionScore == null) {
+    return CyclePositionModel(
+      score: null,
+      title: '시장 사이클 위치',
+      description: '지표 데이터를 계산 중입니다.',
+      color: Colors.blue,
+    );
+  }
+
   final positionLabel = getCyclePositionLabel(cyclePositionScore: cyclePositionScore);
+
   final positionDescription = getCyclePositionDescription(cyclePositionScore: cyclePositionScore);
+
   return CyclePositionModel(
     score: cyclePositionScore,
     title: positionLabel,

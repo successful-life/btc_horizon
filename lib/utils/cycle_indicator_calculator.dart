@@ -361,17 +361,26 @@ double? calculateCategoryScore({required List<WeightedScore> indicatorList}) {
   return score;
 }
 
-// CyclePosition 관련 함수
-double calculateCyclePositionScore({required CycleIndicators indicators}) {
-  // 4개의 카테고리 중 score가 null인 것은 0점으로 설정
-  final valuationScore = (indicators.valuation.score ?? 0) * indicators.valuation.weight;
-  final cycleTimingScore = (indicators.cycleTiming.score ?? 0) * indicators.cycleTiming.weight;
-  final trendScore = (indicators.trend.summary.score ?? 0) * indicators.trend.summary.weight;
-  final sentimentScore = (indicators.sentiment.score ?? 0) * indicators.sentiment.weight;
+double? calculateCyclePositionScore({required CycleIndicators indicators}) {
+  final valuationScore = indicators.valuation.score;
+  final cycleTimingScore = indicators.cycleTiming.score;
+  final trendScore = indicators.trend.summary.score;
+  final sentimentScore = indicators.sentiment.score;
 
-  final cyclePositionScore = (valuationScore + cycleTimingScore + trendScore + sentimentScore);
+  if (valuationScore == null ||
+      cycleTimingScore == null ||
+      trendScore == null ||
+      sentimentScore == null) {
+    return null;
+  }
 
-  return cyclePositionScore.clamp(0, 100);
+  final cyclePositionScore =
+      valuationScore * indicators.valuation.weight +
+      cycleTimingScore * indicators.cycleTiming.weight +
+      trendScore * indicators.trend.summary.weight +
+      sentimentScore * indicators.sentiment.weight;
+
+  return cyclePositionScore.clamp(0.0, 100.0).toDouble();
 }
 
 String getCyclePositionLabel({required double cyclePositionScore}) {
