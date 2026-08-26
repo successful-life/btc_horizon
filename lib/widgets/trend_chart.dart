@@ -37,12 +37,7 @@ class TrendChart extends StatelessWidget {
           lineTouchData: LineTouchData(enabled: true),
 
           lineBarsData: [
-            _buildLine(
-              points: data.price,
-              barWidth: 3.0,
-              isCurved: false,
-              color: Colors.white,
-            ), // white or bright color
+            _buildLine(points: data.price, barWidth: 3.0, isCurved: false, color: Colors.white),
             _buildLine(
               points: data.upperTrendThreshold,
               barWidth: 1.5,
@@ -73,7 +68,7 @@ class TrendChart extends StatelessWidget {
         transformationConfig: const FlTransformationConfig(
           scaleAxis: FlScaleAxis.horizontal,
           minScale: 1,
-          maxScale: 5, // 4~8
+          maxScale: 5,
           panEnabled: true,
           scaleEnabled: true,
         ),

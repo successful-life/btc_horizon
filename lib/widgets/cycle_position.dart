@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/cycle_position_provider.dart';
+import 'package:btc_horizon/providers/cycle_position_provider.dart';
 
 class CyclePosition extends ConsumerWidget {
   const CyclePosition({super.key});

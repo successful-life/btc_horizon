@@ -1,5 +1,5 @@
-import '../models/fear_greed_model.dart';
-import '../services/fear_greed_service.dart';
+import 'package:btc_horizon/models/fear_greed_model.dart';
+import 'package:btc_horizon/services/fear_greed_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final fearGreedServiceProvider = Provider<FearGreedService>((ref) {

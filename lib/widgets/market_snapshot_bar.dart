@@ -2,7 +2,7 @@ import 'package:btc_horizon/providers/binance_price_provider.dart';
 import 'package:btc_horizon/providers/usdt_premium_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'snapshot_item.dart';
+import 'package:btc_horizon/widgets/snapshot_item.dart';
 import 'package:intl/intl.dart';
 import 'package:btc_horizon/enums/binance_symbol.dart';
 

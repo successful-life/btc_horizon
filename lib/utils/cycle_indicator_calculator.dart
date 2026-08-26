@@ -294,10 +294,6 @@ IndicatorSummaryModel calculateCycleTimingIndicator({required DateTime today}) {
 }
 
 // ================================
-// 3. Trend
-// ================================
-
-// ================================
 // 4. Sentiment
 // ================================
 
