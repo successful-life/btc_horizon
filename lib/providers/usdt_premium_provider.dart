@@ -15,11 +15,6 @@ final usdtPremiumProvider = Provider<AsyncValue<UsdtPremiumModel>>((ref) {
   final bithumbUsdtAsync = ref.watch(bithumbPriceProvider(krwUsdtMarket));
   final exchangeRateAsync = ref.watch(exchangeRateProvider);
 
-  // 로딩 시
-  if (upbitUsdtAsync.isLoading || bithumbUsdtAsync.isLoading || exchangeRateAsync.isLoading) {
-    return const AsyncValue.loading();
-  }
-
   // 에러 발생 시
   if (upbitUsdtAsync.hasError) {
     return AsyncValue.error(upbitUsdtAsync.error!, upbitUsdtAsync.stackTrace!);
@@ -31,6 +26,11 @@ final usdtPremiumProvider = Provider<AsyncValue<UsdtPremiumModel>>((ref) {
 
   if (exchangeRateAsync.hasError) {
     return AsyncValue.error(exchangeRateAsync.error!, exchangeRateAsync.stackTrace!);
+  }
+
+  // 로딩 시
+  if (upbitUsdtAsync.isLoading || bithumbUsdtAsync.isLoading || exchangeRateAsync.isLoading) {
+    return const AsyncValue.loading();
   }
 
   // 데이터가 존재할 경우

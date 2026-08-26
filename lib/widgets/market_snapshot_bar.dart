@@ -21,12 +21,12 @@ class MarketSnapshotBar extends ConsumerWidget {
     final btcPriceAsync = ref.watch(binancePriceProvider(BinanceSymbol.btcusdt));
     final usdtPremiumAsync = ref.watch(usdtPremiumProvider);
 
-    if (btcPriceAsync.isLoading || usdtPremiumAsync.isLoading) {
-      return const SizedBox(height: 80, child: Center(child: Text("시장 데이터 로딩 중...")));
-    }
-
     if (btcPriceAsync.hasError || usdtPremiumAsync.hasError) {
       return const SizedBox(height: 80, child: Center(child: Text("시장 데이터 오류")));
+    }
+
+    if (btcPriceAsync.isLoading || usdtPremiumAsync.isLoading) {
+      return const SizedBox(height: 80, child: Center(child: Text("시장 데이터 로딩 중...")));
     }
 
     final model = usdtPremiumAsync.requireValue;
