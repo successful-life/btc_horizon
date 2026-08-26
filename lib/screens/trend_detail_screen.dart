@@ -11,17 +11,17 @@ class TrendDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final trendAsync = ref.watch(trendProvider);
-    return trendAsync.when(
-      loading: () {
-        return Scaffold(body: Center(child: const CircularProgressIndicator()));
-      },
-      error: (error, stackTrace) {
-        return Scaffold(body: Center(child: Text('추세 데이터를 불러오지 못했습니다.')));
-      },
-      data: (trendDetailModel) {
-        return Scaffold(
-          appBar: AppBar(title: const Text('추세 상세')),
-          body: SingleChildScrollView(
+    return Scaffold(
+      appBar: AppBar(title: const Text('추세 상세')),
+      body: trendAsync.when(
+        loading: () {
+          return const Center(child: CircularProgressIndicator());
+        },
+        error: (error, stackTrace) {
+          return const Center(child: Text('추세 데이터를 불러오지 못했습니다.'));
+        },
+        data: (trendDetailModel) {
+          return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
@@ -37,9 +37,9 @@ class TrendDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 20),
               ],
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
