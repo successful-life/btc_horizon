@@ -17,50 +17,64 @@ final weeklyTrendDataProvider = Provider<AsyncValue<WeeklyTrendDataModel>>((ref)
 
   final weeklyBtcKlineAsync = ref.watch(binanceKlineProvider(weeklyBtcKlineRequest));
 
-  return weeklyBtcKlineAsync.whenData((weeklyBtcKlines) {
-    final trendBaselineValues = calculateSma(klines: weeklyBtcKlines, period: 52);
-    final upperTrendThresholdValues = calculateEma(klines: weeklyBtcKlines, period: 10);
-    final lowerTrendThresholdValues = calculateSsma(klines: weeklyBtcKlines, period: 100);
-    final bottomRangeBoundaryValues = calculateEma(klines: weeklyBtcKlines, period: 280);
+  return weeklyBtcKlineAsync.when(
+    data: (weeklyBtcKlines) {
+      if (weeklyBtcKlines.length < 280) {
+        return AsyncError(StateError('Trend 계산에 필요한 주봉 데이터가 충족되지 않았습니다.'), StackTrace.current);
+      }
 
-    final pricePoints = weeklyBtcKlines
-        .map((kline) => TrendChartPoint(time: kline.openTime, value: kline.close))
-        .toList();
+      final trendBaselineValues = calculateSma(klines: weeklyBtcKlines, period: 52);
+      final upperTrendThresholdValues = calculateEma(klines: weeklyBtcKlines, period: 10);
+      final lowerTrendThresholdValues = calculateSsma(klines: weeklyBtcKlines, period: 100);
+      final bottomRangeBoundaryValues = calculateEma(klines: weeklyBtcKlines, period: 280);
 
-    final trendBaselinePoints = buildTrendChartPoints(
-      klines: weeklyBtcKlines,
-      values: trendBaselineValues,
-    );
+      final pricePoints = weeklyBtcKlines
+          .map((kline) => TrendChartPoint(time: kline.openTime, value: kline.close))
+          .toList();
 
-    final upperTrendThresholdPoints = buildTrendChartPoints(
-      klines: weeklyBtcKlines,
-      values: upperTrendThresholdValues,
-    );
+      final trendBaselinePoints = buildTrendChartPoints(
+        klines: weeklyBtcKlines,
+        values: trendBaselineValues,
+      );
 
-    final lowerTrendThresholdPoints = buildTrendChartPoints(
-      klines: weeklyBtcKlines,
-      values: lowerTrendThresholdValues,
-    );
+      final upperTrendThresholdPoints = buildTrendChartPoints(
+        klines: weeklyBtcKlines,
+        values: upperTrendThresholdValues,
+      );
 
-    final bottomRangeBoundaryPoints = buildTrendChartPoints(
-      klines: weeklyBtcKlines,
-      values: bottomRangeBoundaryValues,
-    );
+      final lowerTrendThresholdPoints = buildTrendChartPoints(
+        klines: weeklyBtcKlines,
+        values: lowerTrendThresholdValues,
+      );
 
-    final chartData = TrendChartDataModel(
-      price: pricePoints,
-      trendBaseline: trendBaselinePoints,
-      upperTrendThreshold: upperTrendThresholdPoints,
-      lowerTrendThreshold: lowerTrendThresholdPoints,
-      bottomRangeBoundary: bottomRangeBoundaryPoints,
-    );
+      final bottomRangeBoundaryPoints = buildTrendChartPoints(
+        klines: weeklyBtcKlines,
+        values: bottomRangeBoundaryValues,
+      );
 
-    return WeeklyTrendDataModel(
-      trendBaseline: trendBaselineValues.last!,
-      upperTrendThreshold: upperTrendThresholdValues.last!,
-      lowerTrendThreshold: lowerTrendThresholdValues.last!,
-      bottomRangeBoundary: bottomRangeBoundaryValues.last!,
-      chartData: chartData,
-    );
-  });
+      final chartData = TrendChartDataModel(
+        price: pricePoints,
+        trendBaseline: trendBaselinePoints,
+        upperTrendThreshold: upperTrendThresholdPoints,
+        lowerTrendThreshold: lowerTrendThresholdPoints,
+        bottomRangeBoundary: bottomRangeBoundaryPoints,
+      );
+
+      return AsyncData(
+        WeeklyTrendDataModel(
+          trendBaseline: trendBaselineValues.last!,
+          upperTrendThreshold: upperTrendThresholdValues.last!,
+          lowerTrendThreshold: lowerTrendThresholdValues.last!,
+          bottomRangeBoundary: bottomRangeBoundaryValues.last!,
+          chartData: chartData,
+        ),
+      );
+    },
+
+    error: (error, stackTrace) {
+      return AsyncError(error, stackTrace);
+    },
+
+    loading: () => const AsyncLoading(),
+  );
 });
