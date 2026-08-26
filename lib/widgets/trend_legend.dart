@@ -10,10 +10,10 @@ class TrendLegend extends StatelessWidget {
       runSpacing: 8,
       children: [
         _LegendItem(label: 'BTC 가격', color: Colors.white),
-        _LegendItem(label: '중·단기 추세 기준선', color: Colors.red),
-        _LegendItem(label: '장기 추세 기준선', color: Colors.orange),
-        _LegendItem(label: '하락 심화 기준선', color: Colors.yellow),
-        _LegendItem(label: '바닥권 진입 기준선', color: Colors.teal),
+        _LegendItem(label: '중·단기 추세 기준선', color: Colors.pink),
+        _LegendItem(label: '장기 추세 기준선', color: Colors.amber),
+        _LegendItem(label: '하락 깊이 기준선', color: Colors.yellow),
+        _LegendItem(label: '바닥권 진입 기준선', color: Colors.cyan),
       ],
     );
   }
