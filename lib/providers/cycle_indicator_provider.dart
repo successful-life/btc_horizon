@@ -170,7 +170,6 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
   // ================================
   final valuationScore = calculateCategoryScore(indicatorList: valuationList);
   final cycleTimingScore = calculateCategoryScore(indicatorList: cycleTimingList);
-  //final trendScore = calculateCategoryScore(indicatorList: trendList);
   final sentimentScore = calculateCategoryScore(indicatorList: sentimentList);
 
   final valuationModel = CycleIndicatorModel(

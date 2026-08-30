@@ -1,3 +1,5 @@
+import 'package:btc_horizon/enums/bitstamp_symbol.dart';
+import 'package:btc_horizon/providers/bitstamp_ohlc_provider.dart';
 import 'package:btc_horizon/providers/trend_provider.dart';
 import 'package:btc_horizon/widgets/trend_chart.dart';
 import 'package:btc_horizon/widgets/trend_indicator_section.dart';
@@ -11,6 +13,7 @@ class TrendDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final trendAsync = ref.watch(trendProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text('추세 상세')),
       body: trendAsync.when(
@@ -35,6 +38,23 @@ class TrendDetailScreen extends ConsumerWidget {
                 TrendIndicatorSection(indicators: trendDetailModel.summary.indicators),
 
                 const SizedBox(height: 20),
+
+                // ---------------------------------------------------
+                ElevatedButton(
+                  onPressed: () async {
+                    final result = await ref.read(
+                      bitstampOhlcProvider(BitstampSymbol.btcusd).future,
+                    );
+
+                    print('count: ${result.length}');
+                    print('first time: ${result.first.openTime}');
+                    print('first close: ${result.first.close}');
+                    print('last time: ${result.last.openTime}');
+                    print('last close: ${result.last.close}');
+                  },
+                  child: const Text('Bitstamp 테스트'),
+                ),
+                // --------------------------------------------
               ],
             ),
           );

@@ -5,7 +5,7 @@ class BinanceKlineModel {
   final double low;
   final double close;
 
-  BinanceKlineModel({
+  const BinanceKlineModel({
     required this.openTime,
     required this.open,
     required this.high,

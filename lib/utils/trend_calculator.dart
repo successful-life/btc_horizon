@@ -12,7 +12,6 @@ List<double?> calculateSma({required List<BinanceKlineModel> klines, required in
 
   final smaValues = List<double?>.filled(klines.length, null);
 
-  // 첫 Window 합 계산
   double windowSum = 0;
   for (int i = 0; i < period; i++) {
     windowSum += klines[i].close;
@@ -20,7 +19,6 @@ List<double?> calculateSma({required List<BinanceKlineModel> klines, required in
 
   smaValues[period - 1] = windowSum / period;
 
-  // Sliding Window
   for (int i = period; i < klines.length; i++) {
     windowSum += klines[i].close;
     windowSum -= klines[i - period].close;
@@ -42,10 +40,8 @@ List<double?> calculateEma({required List<BinanceKlineModel> klines, required in
 
   final emaValues = List<double?>.filled(klines.length, null);
 
-  // EMA smoothing factor
   final alpha = 2 / (period + 1);
 
-  // 첫 EMA는 SMA로 초기화
   double initialSum = 0;
 
   for (int i = 0; i < period; i++) {
@@ -54,7 +50,6 @@ List<double?> calculateEma({required List<BinanceKlineModel> klines, required in
 
   emaValues[period - 1] = initialSum / period;
 
-  // 이후 EMA 계산
   for (int i = period; i < klines.length; i++) {
     final previousEma = emaValues[i - 1]!;
 
@@ -75,7 +70,6 @@ List<double?> calculateSsma({required List<BinanceKlineModel> klines, required i
 
   final ssmaValues = List<double?>.filled(klines.length, null);
 
-  // 첫 번째 SSMA는 SMA로 초기화
   double initialSum = 0;
 
   for (int i = 0; i < period; i++) {
@@ -84,7 +78,6 @@ List<double?> calculateSsma({required List<BinanceKlineModel> klines, required i
 
   ssmaValues[period - 1] = initialSum / period;
 
-  // 이후부터 이전 SSMA를 이용해 계산
   for (int i = period; i < klines.length; i++) {
     final previousSsma = ssmaValues[i - 1]!;
 
