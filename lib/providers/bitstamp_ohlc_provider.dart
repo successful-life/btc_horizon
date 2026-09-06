@@ -14,9 +14,5 @@ final bitstampOhlcProvider = FutureProvider.family<List<BitstampOhlcModel>, Bits
   final service = ref.read(bitstampOhlcServiceProvider);
   const dailyStep = 86400;
 
-  return service.fetchAllOhlc(
-    symbol: symbol,
-    step: dailyStep,
-    startTime: DateTime.utc(2011, 8, 18),
-  );
+  return service.fetchAllOhlc(symbol: symbol, step: dailyStep, startTime: DateTime(2011, 8, 18));
 });

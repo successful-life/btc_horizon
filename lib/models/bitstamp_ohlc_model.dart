@@ -15,10 +15,7 @@ class BitstampOhlcModel {
 
   factory BitstampOhlcModel.fromJson(Map<String, dynamic> json) {
     return BitstampOhlcModel(
-      openTime: DateTime.fromMillisecondsSinceEpoch(
-        int.parse(json['timestamp'] as String) * 1000,
-        isUtc: true,
-      ),
+      openTime: DateTime.fromMillisecondsSinceEpoch(int.parse(json['timestamp'] as String) * 1000),
       open: double.parse(json['open'] as String),
       high: double.parse(json['high'] as String),
       low: double.parse(json['low'] as String),

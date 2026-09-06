@@ -46,7 +46,7 @@ class BitstampOhlcService {
 
     final allOhlc = <BitstampOhlcModel>[];
 
-    var start = startTime.toUtc().millisecondsSinceEpoch ~/ 1000;
+    var start = startTime.millisecondsSinceEpoch ~/ 1000;
 
     while (true) {
       final batch = await fetchOhlc(
@@ -64,10 +64,6 @@ class BitstampOhlcService {
       batch.sort((a, b) => a.openTime.compareTo(b.openTime));
 
       allOhlc.addAll(batch);
-
-      if (batch.length < limit) {
-        break;
-      }
 
       final lastOpenTime = batch.last.openTime.millisecondsSinceEpoch ~/ 1000;
 
