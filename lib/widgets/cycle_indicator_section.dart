@@ -1,6 +1,7 @@
 import 'package:btc_horizon/enums/cycle_indicator_type.dart';
 import 'package:btc_horizon/providers/cycle_indicator_provider.dart';
 import 'package:btc_horizon/screens/cycle_indicator_detail_screen.dart';
+import 'package:btc_horizon/screens/cycle_timing_detail_screen.dart';
 import 'package:btc_horizon/screens/trend_detail_screen.dart';
 import 'package:btc_horizon/widgets/cycle_indicator_card.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +19,7 @@ class CycleIndicatorSection extends ConsumerWidget {
       children: [
         const Text('사이클 지표', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
         const SizedBox(height: 12),
+
         Column(
           children: [
             Row(
@@ -32,17 +34,13 @@ class CycleIndicatorSection extends ConsumerWidget {
                     bgColor: const Color(0xFFE6F7D8),
                     iconColor: Colors.green.shade800,
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              const CycleIndicatorDetailScreen(type: CycleIndicatorType.valuation),
-                        ),
-                      );
+                      _openDetailScreen(context, CycleIndicatorType.valuation);
                     },
                   ),
                 ),
+
                 const SizedBox(width: 16),
+
                 // 2. Cycle Timing Card
                 Expanded(
                   child: CycleIndicatorCard(
@@ -53,23 +51,18 @@ class CycleIndicatorSection extends ConsumerWidget {
                     bgColor: const Color(0xFFFFE2A8),
                     iconColor: Colors.orange.shade800,
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const CycleIndicatorDetailScreen(
-                            type: CycleIndicatorType.cycleTiming,
-                          ),
-                        ),
-                      );
+                      _openDetailScreen(context, CycleIndicatorType.cycleTiming);
                     },
                   ),
                 ),
               ],
             ),
+
             const SizedBox(height: 16),
+
             Row(
               children: [
-                // 3. trend Card
+                // 3. Trend Card
                 Expanded(
                   child: CycleIndicatorCard(
                     icon: Icons.show_chart,
@@ -79,14 +72,13 @@ class CycleIndicatorSection extends ConsumerWidget {
                     bgColor: const Color(0xFFE1E6FF),
                     iconColor: Colors.indigo.shade800,
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const TrendDetailScreen()),
-                      );
+                      _openDetailScreen(context, CycleIndicatorType.trend);
                     },
                   ),
                 ),
+
                 const SizedBox(width: 16),
+
                 // 4. Sentiment Card
                 Expanded(
                   child: CycleIndicatorCard(
@@ -97,13 +89,7 @@ class CycleIndicatorSection extends ConsumerWidget {
                     bgColor: const Color.fromARGB(255, 249, 169, 169),
                     iconColor: Colors.red.shade800,
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              const CycleIndicatorDetailScreen(type: CycleIndicatorType.sentiment),
-                        ),
-                      );
+                      _openDetailScreen(context, CycleIndicatorType.sentiment);
                     },
                   ),
                 ),
@@ -114,4 +100,17 @@ class CycleIndicatorSection extends ConsumerWidget {
       ],
     );
   }
+}
+
+void _openDetailScreen(BuildContext context, CycleIndicatorType type) {
+  final screen = switch (type) {
+    CycleIndicatorType.cycleTiming => const CycleTimingDetailScreen(),
+
+    CycleIndicatorType.trend => const TrendDetailScreen(),
+
+    CycleIndicatorType.valuation ||
+    CycleIndicatorType.sentiment => CycleIndicatorDetailScreen(type: type),
+  };
+
+  Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
 }

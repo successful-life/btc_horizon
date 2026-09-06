@@ -1,10 +1,10 @@
+import 'package:btc_horizon/data/cycle_indicator_config.dart';
 import 'package:btc_horizon/enums/binance_symbol.dart';
 import 'package:btc_horizon/enums/cycle_indicator_type.dart';
 import 'package:btc_horizon/models/cycle_indicator_model.dart';
 import 'package:btc_horizon/models/indicator_summary_model.dart';
 import 'package:btc_horizon/models/trend_detail_model.dart';
 import 'package:btc_horizon/providers/binance_price_provider.dart';
-import 'package:btc_horizon/providers/cycle_indicator_provider.dart';
 import 'package:btc_horizon/providers/weekly_trend_data_provider.dart';
 import 'package:btc_horizon/utils/trend_calculator.dart';
 import 'package:btc_horizon/utils/trend_utils.dart';

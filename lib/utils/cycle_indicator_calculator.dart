@@ -1,3 +1,4 @@
+import 'package:btc_horizon/data/cycle_timing_data.dart';
 import 'package:btc_horizon/models/cycle_indicators.dart';
 import 'package:btc_horizon/models/indicator_summary_model.dart';
 import 'package:btc_horizon/models/weighted_score_model.dart';
@@ -6,17 +7,6 @@ import 'package:intl/intl.dart';
 
 const kCycleTolerance = Duration(days: 45);
 const kWeightTolerance = 0.0001;
-
-final List<DateTime> btcCycleTops = [
-  DateTime(2017, 12, 17),
-  DateTime(2021, 11, 10),
-  DateTime(2025, 10, 06),
-];
-final List<DateTime> btcCycleBottoms = [
-  DateTime(2015, 1, 14),
-  DateTime(2018, 12, 15),
-  DateTime(2022, 11, 21),
-];
 
 // ================================
 // 1. Valuation & On-chain
@@ -187,6 +177,7 @@ double calculateTransitionScore({
 // 2-1. 날짜 기반 예측
 IndicatorSummaryModel calculateCycleTimingIndicator({required DateTime today}) {
   final normalizedToday = DateTime(today.year, today.month, today.day);
+  const label = '고·저점 주기 분석';
 
   final averageIntervals = calculateAverageCycleIntervals(
     tops: btcCycleTops,
@@ -227,7 +218,7 @@ IndicatorSummaryModel calculateCycleTimingIndicator({required DateTime today}) {
     );
 
     return IndicatorSummaryModel(
-      label: '날짜 기반 분석',
+      label: label,
       value: '예상 고점: $formattedTopRangeStart~$formattedTopRangeEnd',
       score: score,
       status: '예상 고점 범위',
@@ -244,7 +235,7 @@ IndicatorSummaryModel calculateCycleTimingIndicator({required DateTime today}) {
     );
 
     return IndicatorSummaryModel(
-      label: '날짜 기반 분석',
+      label: label,
       value: '예상 저점: $formattedBottomRangeStart~$formattedBottomRangeEnd',
       score: score,
       status: '예상 저점 범위',
@@ -261,7 +252,7 @@ IndicatorSummaryModel calculateCycleTimingIndicator({required DateTime today}) {
     );
 
     return IndicatorSummaryModel(
-      label: '날짜 기반 분석',
+      label: label,
       value: '예상 고점: $formattedTopRangeStart ~ $formattedTopRangeEnd',
       score: score,
       status: '저점 이후 · 고점 접근',
@@ -278,14 +269,14 @@ IndicatorSummaryModel calculateCycleTimingIndicator({required DateTime today}) {
     );
 
     return IndicatorSummaryModel(
-      label: '날짜 기반 분석',
+      label: label,
       value: '예상 저점: $formattedBottomRangeStart ~ $formattedBottomRangeEnd',
       score: score,
       status: '고점 이후 · 저점 접근',
     );
   } else {
-    return IndicatorSummaryModel(
-      label: '날짜 기반 분석',
+    return const IndicatorSummaryModel(
+      label: label,
       value: '현재 날짜가 예상 범위를 벗어났습니다.',
       score: null,
       status: '데이터 업데이트 필요',

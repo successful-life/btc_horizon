@@ -1,3 +1,4 @@
+import 'package:btc_horizon/data/cycle_indicator_config.dart';
 import 'package:btc_horizon/enums/cycle_indicator_type.dart';
 import 'package:btc_horizon/models/cycle_indicator_model.dart';
 import 'package:btc_horizon/models/cycle_indicators.dart';
@@ -11,11 +12,6 @@ import 'package:btc_horizon/providers/mvrv_z_score_provider.dart';
 import 'package:btc_horizon/providers/trend_provider.dart';
 import 'package:btc_horizon/utils/cycle_indicator_calculator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-const kValuationWeight = 0.35;
-const kCycleTimingWeight = 0.3;
-const kTrendWeight = 0.25;
-const kSentimentWeight = 0.1;
 
 final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
   final valuationList = <WeightedScore>[];
