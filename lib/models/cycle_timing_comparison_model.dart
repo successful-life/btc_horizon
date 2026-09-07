@@ -3,11 +3,15 @@ import 'package:btc_horizon/models/halving_cycle_model.dart';
 
 class CycleTimingComparisonModel {
   final double currentProgress;
+  final DateTime asOfDate;
+  final HalvingCycleModel currentCycle;
   final List<CycleTimingComparisonItemModel> comparisons;
   final List<CycleTimingChartPointModel> chartPoints;
 
   const CycleTimingComparisonModel({
     required this.currentProgress,
+    required this.asOfDate,
+    required this.currentCycle,
     required this.comparisons,
     required this.chartPoints,
   });

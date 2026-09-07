@@ -1,5 +1,6 @@
 import 'package:btc_horizon/providers/cycle_timing_comparison_provider.dart';
 import 'package:btc_horizon/widgets/cycle_timing_comparison_chart.dart';
+import 'package:btc_horizon/widgets/cycle_timing_comparison_legend.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -23,11 +24,12 @@ class CycleTimingComparisonSection extends ConsumerWidget {
               '${(comparison.currentProgress * 100).toStringAsFixed(1)}%',
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
             CycleTimingComparisonChart(comparison: comparison),
+            CycleTimingComparisonLegend(),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
 
             Text(
               '현재 진행률과 동일한 위치를 과거 반감기 사이클에 적용한 결과입니다.',

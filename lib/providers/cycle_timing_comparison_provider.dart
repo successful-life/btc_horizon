@@ -10,21 +10,38 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 final cycleTimingComparisonProvider = Provider<AsyncValue<CycleTimingComparisonModel>>((ref) {
   final bitstampAsync = ref.watch(bitstampOhlcProvider(BitstampSymbol.btcusd));
 
-  final progress = calculateCycleProgress(cycle: currentHalvingCycle, today: DateTime.now());
+  final now = DateTime.now();
+  final asOfDate = DateTime(now.year, now.month, now.day);
+
+  final progress = calculateCycleProgress(cycle: currentHalvingCycle, today: asOfDate);
 
   final equivalentDates = calculateEquivalentDates(cycles: historicalCycles, progress: progress);
 
   return bitstampAsync.when(
     data: (ohlcList) {
+      if (ohlcList.isEmpty) {
+        return AsyncValue.error(StateError('Bitstamp OHLC 데이터가 비어 있습니다.'), StackTrace.current);
+      }
+
       final comparisonList = <CycleTimingComparisonItemModel>[];
 
       final chartPoints = <CycleTimingChartPointModel>[];
 
-      // 차트 hover 성능을 위해 n일 간격으로 다운샘플링
-      for (int i = 0; i < ohlcList.length; i += 7) {
+      const chartSamplingStride = 3;
+
+      // 차트 hover 성능을 위해 일정 캔들 간격으로 다운샘플링
+      for (int i = 0; i < ohlcList.length; i += chartSamplingStride) {
         final ohlc = ohlcList[i];
 
         chartPoints.add(CycleTimingChartPointModel(date: ohlc.openTime, closePrice: ohlc.close));
+      }
+      // 다운샘플링 과정에서 빠질 수 있는 최신 캔들을 항상 포함
+      if (chartPoints.isNotEmpty && chartPoints.last.date != ohlcList.last.openTime) {
+        final lastOhlc = ohlcList.last;
+
+        chartPoints.add(
+          CycleTimingChartPointModel(date: lastOhlc.openTime, closePrice: lastOhlc.close),
+        );
       }
 
       for (int i = 0; i < historicalCycles.length; i++) {
@@ -32,7 +49,7 @@ final cycleTimingComparisonProvider = Provider<AsyncValue<CycleTimingComparisonM
 
         if (closePrice == null) {
           return AsyncValue.error(
-            StateError('Bitstamp OHLC 데이터를 찾을 수 없습니다: ${equivalentDates[i]}'),
+            StateError('Bitstamp closePrice 데이터를 찾을 수 없습니다: ${equivalentDates[i]}'),
             StackTrace.current,
           );
         }
@@ -49,6 +66,8 @@ final cycleTimingComparisonProvider = Provider<AsyncValue<CycleTimingComparisonM
       return AsyncValue.data(
         CycleTimingComparisonModel(
           currentProgress: progress,
+          asOfDate: asOfDate,
+          currentCycle: currentHalvingCycle,
           comparisons: comparisonList,
           chartPoints: chartPoints,
         ),
