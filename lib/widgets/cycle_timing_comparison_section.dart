@@ -1,6 +1,7 @@
 import 'package:btc_horizon/providers/cycle_timing_comparison_provider.dart';
 import 'package:btc_horizon/widgets/cycle_timing_comparison_chart.dart';
 import 'package:btc_horizon/widgets/cycle_timing_comparison_legend.dart';
+import 'package:btc_horizon/widgets/cycle_timing_progress.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -16,17 +17,18 @@ class CycleTimingComparisonSection extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('과거 사이클 비교', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
 
-            Text(
-              '현재 반감기 사이클 진행률 '
-              '${(comparison.currentProgress * 100).toStringAsFixed(1)}%',
-            ),
+            CycleTimingProgress(comparison: comparison),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 36),
+
+            const Text('반감기 사이클 비교', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+
+            const SizedBox(height: 16),
 
             CycleTimingComparisonChart(comparison: comparison),
+
             CycleTimingComparisonLegend(),
 
             const SizedBox(height: 20),

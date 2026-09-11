@@ -22,6 +22,7 @@ class CycleTimingComparisonChart extends StatelessWidget {
     const double logYAxisTopPadding = 0.15;
     const double logYAxisBottomPadding = 0.05;
     const double xAxisRightPaddingDays = 30;
+    const double leftAxisReservedSize = 55;
 
     final firstDate = comparison.chartPoints.first.date;
 
@@ -39,22 +40,23 @@ class CycleTimingComparisonChart extends StatelessWidget {
       ...comparison.comparisons.map((item) => item.cycle.endDate),
     ];
 
-    final equivalentLines = comparison.comparisons.map((item) {
-      final x = _dateToX(date: item.equivalentDate, firstDate: firstDate);
-
-      return VerticalLine(x: x, color: progressLineColor, strokeWidth: 1);
-    }).toList();
-
     final halvingLines = halvingDates.map((date) {
       final x = _dateToX(date: date, firstDate: firstDate);
 
-      return VerticalLine(x: x, strokeWidth: 1, color: halvingLineColor.withValues(alpha: 0.5));
+      return VerticalLine(x: x, strokeWidth: 1.5, color: halvingLineColor.withValues(alpha: 0.5));
+    }).toList();
+
+    final equivalentLines = comparison.comparisons.map((item) {
+      final x = _dateToX(date: item.equivalentDate, firstDate: firstDate);
+
+      return VerticalLine(x: x, color: progressLineColor, strokeWidth: 1.5, dashArray: [5, 5]);
     }).toList();
 
     final currentProgressLine = VerticalLine(
       x: currentProgressX,
       color: progressLineColor,
       strokeWidth: 1.5,
+      dashArray: [5, 5],
     );
 
     final cycleRanges = comparison.comparisons.map((item) {
@@ -72,18 +74,24 @@ class CycleTimingComparisonChart extends StatelessWidget {
     );
 
     final maxVisibleX = max(spots.last.x, currentProgressX);
+    final chartMinX = spots.first.x;
+    final chartMaxX = maxVisibleX + xAxisRightPaddingDays;
 
     return SizedBox(
       height: 320,
       child: LineChart(
         LineChartData(
-          minX: spots.first.x,
-          maxX: maxVisibleX + xAxisRightPaddingDays,
+          minX: chartMinX,
+          maxX: chartMaxX,
 
           minY: minY - logYAxisBottomPadding,
           maxY: maxY + logYAxisTopPadding,
 
-          gridData: const FlGridData(show: true, drawVerticalLine: false, drawHorizontalLine: true),
+          gridData: const FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            drawHorizontalLine: false,
+          ),
 
           borderData: FlBorderData(show: true),
 
@@ -92,29 +100,24 @@ class CycleTimingComparisonChart extends StatelessWidget {
             rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
 
             bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 32,
-                interval: 365,
-                getTitlesWidget: (value, meta) {
-                  final date = firstDate.add(Duration(days: value.round()));
-
-                  if (date.year % 4 != 0) {
-                    return const SizedBox.shrink();
-                  }
-
-                  return SideTitleWidget(
-                    meta: meta,
-                    child: Text('${date.year}', style: const TextStyle(fontSize: 10)),
-                  );
-                },
+              sideTitles: const SideTitles(showTitles: false),
+              axisNameSize: 32,
+              axisNameWidget: Padding(
+                // 왼쪽 가격 축을 제외한 영역을 차트의 가로 범위와 맞춘다.
+                padding: const EdgeInsets.only(left: leftAxisReservedSize),
+                child: _HalvingYearLabels(
+                  halvingDates: halvingDates,
+                  firstDate: firstDate,
+                  minX: chartMinX,
+                  maxX: chartMaxX,
+                ),
               ),
             ),
 
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                reservedSize: 55,
+                reservedSize: leftAxisReservedSize,
                 getTitlesWidget: (value, meta) {
                   final price = _yToPrice(value);
 
@@ -189,4 +192,64 @@ double _priceToY(double price) {
 
 double _yToPrice(double y) {
   return pow(10, y).toDouble();
+}
+
+class _HalvingYearLabels extends StatelessWidget {
+  final List<DateTime> halvingDates;
+  final DateTime firstDate;
+  final double minX;
+  final double maxX;
+
+  const _HalvingYearLabels({
+    required this.halvingDates,
+    required this.firstDate,
+    required this.minX,
+    required this.maxX,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (maxX <= minX) {
+      return const SizedBox.shrink();
+    }
+
+    const labelWidth = 40.0;
+
+    final visibleDates = halvingDates.toSet().where((date) {
+      final x = _dateToX(date: date, firstDate: firstDate);
+      return x >= minX && x <= maxX;
+    }).toList();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final axisWidth = constraints.maxWidth;
+
+        if (axisWidth < labelWidth) {
+          return const SizedBox.shrink();
+        }
+
+        return Stack(
+          children: [
+            for (final date in visibleDates)
+              Positioned(
+                left:
+                    ((_dateToX(date: date, firstDate: firstDate) - minX) /
+                                (maxX - minX) *
+                                axisWidth -
+                            labelWidth / 2)
+                        .clamp(0.0, axisWidth - labelWidth)
+                        .toDouble(),
+                top: 8,
+                width: labelWidth,
+                child: Text(
+                  '${date.year}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 10),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
 }

@@ -23,6 +23,7 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
   // ================================
 
   // 1-1. MVRV Z-Score
+  /*
   final mvrvAsync = ref.watch(mvrvZScoreProvider);
   final IndicatorSummaryModel mvrvIndicator;
 
@@ -53,7 +54,7 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
     );
 
     valuationList.add(WeightedScore(score: mvrvScore, weight: 1.0));
-  }
+  }*/
 
   // ================================
   // 2. Cycle Timing
@@ -173,7 +174,7 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
     title: '가치평가',
     score: valuationScore,
     weight: kValuationWeight,
-    indicators: [mvrvIndicator],
+    indicators: [], //[mvrvIndicator],
   );
 
   final cycleTimingModel = CycleIndicatorModel(
