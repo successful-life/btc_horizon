@@ -1,29 +1,39 @@
 import 'package:btc_horizon/data/cycle_indicator_config.dart';
 import 'package:btc_horizon/enums/cycle_indicator_type.dart';
+import 'package:btc_horizon/enums/cycle_timing_estimate_type.dart';
 import 'package:btc_horizon/models/cycle_indicator_model.dart';
 import 'package:btc_horizon/models/cycle_indicators.dart';
 import 'package:btc_horizon/models/indicator_summary_model.dart';
 import 'package:btc_horizon/models/trend_chart_data_model.dart';
 import 'package:btc_horizon/models/trend_detail_model.dart';
 import 'package:btc_horizon/models/weighted_score_model.dart';
+import 'package:btc_horizon/providers/cycle_timing_analysis_provider.dart';
 import 'package:btc_horizon/providers/fear_greed_provider.dart';
 import 'package:btc_horizon/providers/funding_rate_provider.dart';
 import 'package:btc_horizon/providers/mvrv_z_score_provider.dart';
 import 'package:btc_horizon/providers/trend_provider.dart';
 import 'package:btc_horizon/utils/cycle_indicator_calculator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
   final valuationList = <WeightedScore>[];
   final cycleTimingList = <WeightedScore>[];
   final sentimentList = <WeightedScore>[];
 
+  // 각 카테고리의 개별 Weight 합은 1이어야 함
+  const mvrvWeight = 1.0;
+
+  const cycleTimingAnalysisWeight = 1.0;
+
+  const fearGreedWeight = 0.9;
+  const fundingRateWeight = 0.1;
+
   // ================================
   // 1. Valuation & On-chain
   // ================================
 
   // 1-1. MVRV Z-Score
-  /*
   final mvrvAsync = ref.watch(mvrvZScoreProvider);
   final IndicatorSummaryModel mvrvIndicator;
 
@@ -53,17 +63,37 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
       status: mvrvStatus,
     );
 
-    valuationList.add(WeightedScore(score: mvrvScore, weight: 1.0));
-  }*/
+    valuationList.add(WeightedScore(score: mvrvScore, weight: mvrvWeight));
+  }
 
   // ================================
   // 2. Cycle Timing
   // ================================
-
   // 2-1. 고점 및 저점 기반 예측
-  final now = DateTime.now();
-  final timingRangeIndicator = calculateCycleTimingIndicator(today: now);
-  cycleTimingList.add(WeightedScore(score: timingRangeIndicator.score, weight: 1.0));
+  final cycleTimingAnalysis = ref.watch(cycleTimingAnalysisProvider);
+
+  final formattedRangeStart = DateFormat(
+    'yyyy/MM/dd',
+  ).format(cycleTimingAnalysis.targetEstimate.rangeStartDate);
+  final formattedRangeEnd = DateFormat(
+    'yyyy/MM/dd',
+  ).format(cycleTimingAnalysis.targetEstimate.rangeEndDate);
+
+  final estimateLabel = switch (cycleTimingAnalysis.targetEstimate.type) {
+    CycleTimingEstimateType.top => '예상 고점',
+    CycleTimingEstimateType.bottom => '예상 저점',
+  };
+
+  final timingRangeIndicator = IndicatorSummaryModel(
+    label: '고·저점 주기 분석',
+    value: '$estimateLabel: $formattedRangeStart ~ $formattedRangeEnd',
+    score: cycleTimingAnalysis.score,
+    status: cycleTimingAnalysis.status,
+  );
+
+  cycleTimingList.add(
+    WeightedScore(score: cycleTimingAnalysis.score, weight: cycleTimingAnalysisWeight),
+  );
 
   // ================================
   // 3. Trend
@@ -128,7 +158,7 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
       status: fearGreedStatus,
     );
 
-    sentimentList.add(WeightedScore(score: fearGreedScore, weight: 0.9));
+    sentimentList.add(WeightedScore(score: fearGreedScore, weight: fearGreedWeight));
   }
 
   // 4-2. Funding Rate
@@ -159,7 +189,7 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
       status: fundingRateStatus,
     );
 
-    sentimentList.add(WeightedScore(score: fundingRateScore, weight: 0.1));
+    sentimentList.add(WeightedScore(score: fundingRateScore, weight: fundingRateWeight));
   }
 
   // ================================
@@ -174,7 +204,7 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
     title: '가치평가',
     score: valuationScore,
     weight: kValuationWeight,
-    indicators: [], //[mvrvIndicator],
+    indicators: [mvrvIndicator],
   );
 
   final cycleTimingModel = CycleIndicatorModel(

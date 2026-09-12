@@ -1,12 +1,14 @@
 import 'package:btc_horizon/data/cycle_timing_data.dart';
+import 'package:btc_horizon/enums/cycle_timing_estimate_type.dart';
 import 'package:btc_horizon/models/cycle_indicators.dart';
-import 'package:btc_horizon/models/indicator_summary_model.dart';
+import 'package:btc_horizon/models/cycle_timing_analysis_model.dart';
+import 'package:btc_horizon/models/cycle_timing_estimate_model.dart';
+import 'package:btc_horizon/models/cycle_timing_interval_model.dart';
 import 'package:btc_horizon/models/weighted_score_model.dart';
 import 'dart:math' as math;
-import 'package:intl/intl.dart';
 
-const kCycleTolerance = Duration(days: 45);
-const kWeightTolerance = 0.0001;
+const kCycleTolerance = Duration(days: 50);
+const kWeightTolerance = 0.001;
 
 // ================================
 // 1. Valuation & On-chain
@@ -128,79 +130,79 @@ double calculateTransitionScore({
   return (startScore + (endScore - startScore) * progress);
 }
 
-({int daysFromTopToBottom, int daysFromBottomToTop}) calculateAverageCycleIntervals({
-  required List<DateTime> tops,
-  required List<DateTime> bottoms,
-}) {
-  // 계산
+// 2-1. 날짜 기반 예측
+CycleTimingAnalysisModel calculateCycleTimingAnalysis({required DateTime today}) {
+  final bottomToTopIntervals = <CycleTimingIntervalModel>[];
+  final topToBottomIntervals = <CycleTimingIntervalModel>[];
 
-  int topToBottomTotalDays = 0;
-  int bottomToTopTotalDays = 0;
+  final bottomToTopCount = math.min(btcCycleBottoms.length, btcCycleTops.length);
 
-  int topToBottomCount = 0;
-  int bottomToTopCount = 0;
+  for (int i = 0; i < bottomToTopCount; i++) {
+    final startDate = btcCycleBottoms[i];
+    final endDate = btcCycleTops[i];
 
-  final maxIndex = math.min(tops.length, bottoms.length - 1);
-
-  // 고점 to 저점 구하기
-  for (int i = 0; i < maxIndex; i++) {
-    if (!bottoms[i + 1].isAfter(tops[i])) {
-      throw ArgumentError('Bottom date must be after Top date.');
+    if (!endDate.isAfter(startDate)) {
+      throw ArgumentError('고점 날짜는 대응하는 저점 날짜보다 이후여야 합니다.');
     }
-    topToBottomTotalDays += bottoms[i + 1].difference(tops[i]).inDays;
-    topToBottomCount++;
+
+    bottomToTopIntervals.add(CycleTimingIntervalModel(startDate: startDate, endDate: endDate));
   }
 
-  // 저점 to 고점 구하기
-  for (int i = 0; i < tops.length && i < bottoms.length; i++) {
-    if (!tops[i].isAfter(bottoms[i])) {
-      throw ArgumentError('Top date must be after Bottom date.');
+  for (int i = 0; i < btcCycleTops.length && i + 1 < btcCycleBottoms.length; i++) {
+    final startDate = btcCycleTops[i];
+    final endDate = btcCycleBottoms[i + 1];
+
+    if (!endDate.isAfter(startDate)) {
+      throw ArgumentError('다음 저점 날짜는 고점 날짜보다 이후여야 합니다.');
     }
-    bottomToTopTotalDays += tops[i].difference(bottoms[i]).inDays;
-    bottomToTopCount++;
+
+    topToBottomIntervals.add(CycleTimingIntervalModel(startDate: startDate, endDate: endDate));
   }
 
-  if (topToBottomCount == 0) {
-    throw ArgumentError('완성된 고점 → 저점 구간이 없습니다.');
-  }
-
-  if (bottomToTopCount == 0) {
+  // 저->고, 고->저 평균 구하기
+  if (bottomToTopIntervals.isEmpty) {
     throw ArgumentError('완성된 저점 → 고점 구간이 없습니다.');
   }
 
-  int averageTopToBottom = (topToBottomTotalDays / topToBottomCount).round();
-  int averageBottomToTop = (bottomToTopTotalDays / bottomToTopCount).round();
+  if (topToBottomIntervals.isEmpty) {
+    throw ArgumentError('완성된 고점 → 저점 구간이 없습니다.');
+  }
 
-  return (daysFromTopToBottom: averageTopToBottom, daysFromBottomToTop: averageBottomToTop);
-}
-
-// 2-1. 날짜 기반 예측
-IndicatorSummaryModel calculateCycleTimingIndicator({required DateTime today}) {
-  final normalizedToday = DateTime(today.year, today.month, today.day);
-  const label = '고·저점 주기 분석';
-
-  final averageIntervals = calculateAverageCycleIntervals(
-    tops: btcCycleTops,
-    bottoms: btcCycleBottoms,
+  final bottomToTopTotalDays = bottomToTopIntervals.fold<int>(
+    0,
+    (sum, interval) => sum + interval.durationDays,
   );
 
-  final bottomCenterDate = btcCycleTops.last.add(
-    Duration(days: averageIntervals.daysFromTopToBottom),
+  final topToBottomTotalDays = topToBottomIntervals.fold<int>(
+    0,
+    (sum, interval) => sum + interval.endDate.difference(interval.startDate).inDays,
   );
 
-  final topCenterDate = btcCycleBottoms.last.add(
-    Duration(days: averageIntervals.daysFromBottomToTop),
+  final averageBottomToTopDays = (bottomToTopTotalDays / bottomToTopIntervals.length).round();
+  final averageTopToBottomDays = (topToBottomTotalDays / topToBottomIntervals.length).round();
+
+  final topEstimateCenterDate = btcCycleBottoms.last.add(Duration(days: averageBottomToTopDays));
+  final bottomEstimateCenterDate = btcCycleTops.last.add(Duration(days: averageTopToBottomDays));
+
+  final topEstimate = CycleTimingEstimateModel(
+    type: CycleTimingEstimateType.top,
+    centerDate: topEstimateCenterDate,
+    rangeStartDate: topEstimateCenterDate.subtract(kCycleTolerance),
+    rangeEndDate: topEstimateCenterDate.add(kCycleTolerance),
   );
 
-  final topRangeStart = topCenterDate.subtract(kCycleTolerance);
-  final topRangeEnd = topCenterDate.add(kCycleTolerance);
-  final bottomRangeStart = bottomCenterDate.subtract(kCycleTolerance);
-  final bottomRangeEnd = bottomCenterDate.add(kCycleTolerance);
+  final bottomEstimate = CycleTimingEstimateModel(
+    type: CycleTimingEstimateType.bottom,
+    centerDate: bottomEstimateCenterDate,
+    rangeStartDate: bottomEstimateCenterDate.subtract(kCycleTolerance),
+    rangeEndDate: bottomEstimateCenterDate.add(kCycleTolerance),
+  );
 
-  final formattedTopRangeStart = DateFormat('MM/dd').format(topRangeStart);
-  final formattedTopRangeEnd = DateFormat('MM/dd').format(topRangeEnd);
-  final formattedBottomRangeStart = DateFormat('MM/dd').format(bottomRangeStart);
-  final formattedBottomRangeEnd = DateFormat('MM/dd').format(bottomRangeEnd);
+  final targetEstimate = btcCycleTops.last.isAfter(btcCycleBottoms.last)
+      ? bottomEstimate
+      : topEstimate;
+  final String status;
+  final double? score;
 
   const int bottomCenterScore = 0;
   const int bottomEdgeScore = 20;
@@ -208,80 +210,79 @@ IndicatorSummaryModel calculateCycleTimingIndicator({required DateTime today}) {
   const int topCenterScore = 100;
 
   // 고점 내부라면
-  if (isWithinRange(date: normalizedToday, start: topRangeStart, end: topRangeEnd)) {
-    final score = calculateRangeScore(
-      date: normalizedToday,
-      rangeStart: topRangeStart,
-      rangeEnd: topRangeEnd,
+  if (isWithinRange(
+    date: today,
+    start: topEstimate.rangeStartDate,
+    end: topEstimate.rangeEndDate,
+  )) {
+    status = '예상 고점 범위';
+    score = calculateRangeScore(
+      date: today,
+      rangeStart: topEstimate.rangeStartDate,
+      rangeEnd: topEstimate.rangeEndDate,
       centerScore: topCenterScore,
       edgeScore: topEdgeScore,
     );
-
-    return IndicatorSummaryModel(
-      label: label,
-      value: '예상 고점: $formattedTopRangeStart~$formattedTopRangeEnd',
-      score: score,
-      status: '예상 고점 범위',
-    );
   }
   // 저점 내부라면
-  else if (isWithinRange(date: normalizedToday, start: bottomRangeStart, end: bottomRangeEnd)) {
-    final score = calculateRangeScore(
-      date: normalizedToday,
-      rangeStart: bottomRangeStart,
-      rangeEnd: bottomRangeEnd,
+  else if (isWithinRange(
+    date: today,
+    start: bottomEstimate.rangeStartDate,
+    end: bottomEstimate.rangeEndDate,
+  )) {
+    status = '예상 저점 범위';
+    score = calculateRangeScore(
+      date: today,
+      rangeStart: bottomEstimate.rangeStartDate,
+      rangeEnd: bottomEstimate.rangeEndDate,
       centerScore: bottomCenterScore,
       edgeScore: bottomEdgeScore,
     );
-
-    return IndicatorSummaryModel(
-      label: label,
-      value: '예상 저점: $formattedBottomRangeStart~$formattedBottomRangeEnd',
-      score: score,
-      status: '예상 저점 범위',
-    );
   }
-  // 고점으로 가는 중이라면
-  else if (isWithinRange(date: normalizedToday, start: bottomRangeEnd, end: topRangeStart)) {
-    final score = calculateTransitionScore(
-      date: normalizedToday,
-      startDate: bottomRangeEnd,
-      endDate: topRangeStart,
+  // 고점으로 가는 중이라면 (저점 지남)
+  else if (isWithinRange(
+    date: today,
+    start: bottomEstimate.rangeEndDate,
+    end: topEstimate.rangeStartDate,
+  )) {
+    status = '저점 이후 · 고점 접근';
+    score = calculateTransitionScore(
+      date: today,
+      startDate: bottomEstimate.rangeEndDate,
+      endDate: topEstimate.rangeStartDate,
       startScore: bottomEdgeScore,
       endScore: topEdgeScore,
     );
-
-    return IndicatorSummaryModel(
-      label: label,
-      value: '예상 고점: $formattedTopRangeStart ~ $formattedTopRangeEnd',
-      score: score,
-      status: '저점 이후 · 고점 접근',
-    );
   }
-  // 저점으로 가는 중이라면
-  else if (isWithinRange(date: normalizedToday, start: topRangeEnd, end: bottomRangeStart)) {
-    final score = calculateTransitionScore(
-      date: normalizedToday,
-      startDate: topRangeEnd,
-      endDate: bottomRangeStart,
+  // 저점으로 가는 중이라면 (고점 지남)
+  else if (isWithinRange(
+    date: today,
+    start: topEstimate.rangeEndDate,
+    end: bottomEstimate.rangeStartDate,
+  )) {
+    status = '고점 이후 · 저점 접근';
+    score = calculateTransitionScore(
+      date: today,
+      startDate: topEstimate.rangeEndDate,
+      endDate: bottomEstimate.rangeStartDate,
       startScore: topEdgeScore,
       endScore: bottomEdgeScore,
     );
-
-    return IndicatorSummaryModel(
-      label: label,
-      value: '예상 저점: $formattedBottomRangeStart ~ $formattedBottomRangeEnd',
-      score: score,
-      status: '고점 이후 · 저점 접근',
-    );
   } else {
-    return const IndicatorSummaryModel(
-      label: label,
-      value: '현재 날짜가 예상 범위를 벗어났습니다.',
-      score: null,
-      status: '데이터 업데이트 필요',
-    );
+    status = '현재 날짜가 예상 범위를 벗어났습니다.';
+    score = null;
   }
+
+  return CycleTimingAnalysisModel(
+    asOfDate: today,
+    topToBottomIntervals: topToBottomIntervals,
+    bottomToTopIntervals: bottomToTopIntervals,
+    averageTopToBottomDays: averageTopToBottomDays,
+    averageBottomToTopDays: averageBottomToTopDays,
+    targetEstimate: targetEstimate,
+    status: status,
+    score: score,
+  );
 }
 
 // ================================

@@ -1,0 +1,1 @@
+enum CycleTimingEstimateType { top, bottom }
