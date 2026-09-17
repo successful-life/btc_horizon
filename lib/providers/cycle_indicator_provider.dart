@@ -22,6 +22,7 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
   final sentimentList = <WeightedScore>[];
 
   // 각 카테고리의 개별 Weight 합은 1이어야 함
+
   const mvrvWeight = 1.0;
 
   const cycleTimingAnalysisWeight = 1.0;

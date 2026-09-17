@@ -38,14 +38,6 @@ class CycleIndicatorDetailScreen extends ConsumerWidget {
             IndicatorTable(indicators: cycleIndicatorModel.indicators),
 
             const SizedBox(height: 20),
-
-            const Text('해석 영역(임시)'),
-
-            const SizedBox(height: 20),
-
-            const Text('업데이트 날짜 영역(임시)'),
-
-            const SizedBox(height: 20),
           ],
         ),
       ),
