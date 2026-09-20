@@ -1,3 +1,5 @@
+import 'package:btc_horizon/enums/binance_symbol.dart';
+import 'package:btc_horizon/providers/binance_price_provider.dart';
 import 'package:btc_horizon/providers/analysis_date_provider.dart';
 import 'package:btc_horizon/providers/refresh_scheduler_provider.dart';
 import 'package:btc_horizon/services/refresh_scheduler.dart';
@@ -13,7 +15,8 @@ class AppRefreshScope extends ConsumerStatefulWidget {
   ConsumerState<AppRefreshScope> createState() => _AppRefreshScopeState();
 }
 
-class _AppRefreshScopeState extends ConsumerState<AppRefreshScope> with WidgetsBindingObserver {
+class _AppRefreshScopeState extends ConsumerState<AppRefreshScope>
+    with WidgetsBindingObserver {
   late RefreshScheduler _scheduler;
 
   @override
@@ -22,7 +25,9 @@ class _AppRefreshScopeState extends ConsumerState<AppRefreshScope> with WidgetsB
     _scheduler = ref.read(refreshSchedulerProvider);
     WidgetsBinding.instance.addObserver(this);
     final lifecycle = WidgetsBinding.instance.lifecycleState;
-    _scheduler.setActive(lifecycle == null || lifecycle == AppLifecycleState.resumed);
+    _scheduler.setActive(
+      lifecycle == null || lifecycle == AppLifecycleState.resumed,
+    );
   }
 
   @override
@@ -30,6 +35,12 @@ class _AppRefreshScopeState extends ConsumerState<AppRefreshScope> with WidgetsB
     if (state == AppLifecycleState.resumed) {
       ref.read(analysisDateProvider.notifier).refresh();
       _scheduler.setActive(true);
+      for (final symbol in BinanceSymbol.values) {
+        final provider = binanceSocketServiceProvider(symbol);
+        if (ref.exists(provider)) {
+          ref.read(provider).checkConnection();
+        }
+      }
     } else {
       _scheduler.setActive(false);
     }
