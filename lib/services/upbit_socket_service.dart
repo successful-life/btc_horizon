@@ -1,33 +1,18 @@
-import 'dart:convert';
+import 'package:btc_horizon/services/ticker_socket_service.dart';
 
-import 'package:web_socket_channel/web_socket_channel.dart';
-
-class UpbitSocketService {
-  final String market;
-  static const String _baseUrl = 'wss://api.upbit.com/websocket/v1';
-  late final WebSocketChannel channel;
-
-  UpbitSocketService({required this.market});
-
-  Stream<double> getPriceStream() {
-    channel = WebSocketChannel.connect(Uri.parse(_baseUrl));
-    channel.sink.add(
-      jsonEncode([
-        {"ticket": "test"},
-        {
-          "type": "ticker",
-          "codes": [market],
-        },
-      ]),
-    );
-    return channel.stream.map((data) {
-      final result = jsonDecode(utf8.decode(data));
-
-      return (result['trade_price'] as num).toDouble();
-    });
-  }
-
-  void dispose() {
-    channel.sink.close();
-  }
+class UpbitSocketService extends TickerSocketService {
+  UpbitSocketService({
+    required super.market,
+    super.connect,
+    super.now,
+    super.onLog,
+    super.connectTimeout,
+    super.heartbeatInterval,
+    super.messageTimeout,
+    super.priceResponseTimeout,
+    super.snapshotRefreshInterval,
+  }) : super(
+         exchangeName: 'Upbit',
+         endpoint: Uri.parse('wss://api.upbit.com/websocket/v1'),
+       );
 }

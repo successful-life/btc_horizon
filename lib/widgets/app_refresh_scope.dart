@@ -1,3 +1,5 @@
+import 'package:btc_horizon/providers/upbit_price_provider.dart';
+import 'package:btc_horizon/providers/bithumb_price_provider.dart';
 import 'package:btc_horizon/enums/binance_symbol.dart';
 import 'package:btc_horizon/providers/binance_price_provider.dart';
 import 'package:btc_horizon/providers/analysis_date_provider.dart';
@@ -40,6 +42,16 @@ class _AppRefreshScopeState extends ConsumerState<AppRefreshScope>
         if (ref.exists(provider)) {
           ref.read(provider).checkConnection();
         }
+      }
+      // 현재 앱에서 사용하는 KRW-USDT의 기존 연결만 확인한다.
+      const market = 'KRW-USDT';
+      final upbitService = upbitSocketServiceProvider(market);
+      if (ref.exists(upbitService)) {
+        ref.read(upbitService).checkConnection();
+      }
+      final bithumbService = bithumbSocketServiceProvider(market);
+      if (ref.exists(bithumbService)) {
+        ref.read(bithumbService).checkConnection();
       }
     } else {
       _scheduler.setActive(false);
