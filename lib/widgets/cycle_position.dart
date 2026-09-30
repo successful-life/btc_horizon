@@ -200,11 +200,11 @@ class _CyclePositionScale extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Text('0 · 저점 구간', style: TextStyle(fontSize: 12, color: Color(0xFF667085))),
+                child: Text('0 · 저점권', style: TextStyle(fontSize: 12, color: Color(0xFF667085))),
               ),
               Expanded(
                 child: Text(
-                  '고점 구간 · 100',
+                  '고점권 · 100',
                   textAlign: TextAlign.end,
                   style: TextStyle(fontSize: 12, color: Color(0xFF667085)),
                 ),
