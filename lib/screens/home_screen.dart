@@ -12,13 +12,27 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF0F4F8),
       appBar: AppBar(
-        elevation: 0,
         backgroundColor: const Color(0xFFF0F4F8),
-        title: const Text(
-          'BTC Horizon',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/logos/btc_horizon_logo.png',
+              width: 40,
+              height: 32,
+              fit: BoxFit.contain,
+              excludeFromSemantics: true,
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'BTC Horizon',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF172033)),
+            ),
+          ],
         ),
-        centerTitle: true,
       ),
       body: SafeArea(
         child: ListView(
