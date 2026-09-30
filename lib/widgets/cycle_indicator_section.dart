@@ -17,87 +17,96 @@ class CycleIndicatorSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('사이클 지표', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-        const SizedBox(height: 12),
-
-        Column(
+        const Row(
           children: [
-            Row(
-              children: [
-                // 1. Valuation Card
-                Expanded(
-                  child: CycleIndicatorCard(
-                    icon: Icons.insert_chart_outlined_sharp,
-                    title: indicators.valuation.title,
-                    scoreText: indicators.valuation.score?.round().toString() ?? '-',
-                    valueColor: Colors.green.shade900,
-                    bgColor: const Color(0xFFE6F7D8),
-                    iconColor: Colors.green.shade800,
-                    onTap: () {
-                      _openDetailScreen(context, CycleIndicatorType.valuation);
-                    },
-                  ),
+            Expanded(
+              child: Text(
+                '사이클 지표',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF172033),
                 ),
-
-                const SizedBox(width: 16),
-
-                // 2. Cycle Timing Card
-                Expanded(
-                  child: CycleIndicatorCard(
-                    icon: Icons.date_range,
-                    title: indicators.cycleTiming.title,
-                    scoreText: indicators.cycleTiming.score?.round().toString() ?? '-',
-                    valueColor: Colors.orange.shade900,
-                    bgColor: const Color(0xFFFFE2A8),
-                    iconColor: Colors.orange.shade800,
-                    onTap: () {
-                      _openDetailScreen(context, CycleIndicatorType.cycleTiming);
-                    },
-                  ),
-                ),
-              ],
+              ),
             ),
-
-            const SizedBox(height: 16),
-
-            Row(
-              children: [
-                // 3. Trend Card
-                Expanded(
-                  child: CycleIndicatorCard(
-                    icon: Icons.show_chart,
-                    title: indicators.trend.summary.title,
-                    scoreText: indicators.trend.summary.score?.round().toString() ?? '-',
-                    valueColor: Colors.indigo.shade900,
-                    bgColor: const Color(0xFFE1E6FF),
-                    iconColor: Colors.indigo.shade800,
-                    onTap: () {
-                      _openDetailScreen(context, CycleIndicatorType.trend);
-                    },
-                  ),
-                ),
-
-                const SizedBox(width: 16),
-
-                // 4. Sentiment Card
-                Expanded(
-                  child: CycleIndicatorCard(
-                    icon: Icons.show_chart,
-                    title: indicators.sentiment.title,
-                    scoreText: indicators.sentiment.score?.round().toString() ?? '-',
-                    valueColor: Colors.red.shade900,
-                    bgColor: const Color.fromARGB(255, 249, 169, 169),
-                    iconColor: Colors.red.shade800,
-                    onTap: () {
-                      _openDetailScreen(context, CycleIndicatorType.sentiment);
-                    },
-                  ),
-                ),
-              ],
-            ),
+            SizedBox(width: 12),
+            Text('100점 기준', style: TextStyle(fontSize: 12, color: Color(0xFF667085))),
           ],
         ),
+        const SizedBox(height: 8),
+
+        // 네 행이 공유하는 배경과 둥근 테두리
+        Material(
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFFE5EAF1)),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CycleIndicatorCard(
+                icon: Icons.assessment_outlined,
+                title: indicators.valuation.title,
+                score: indicators.valuation.score,
+                iconColor: const Color(0xFF388E50),
+                onTap: () {
+                  _openDetailScreen(context, CycleIndicatorType.valuation);
+                },
+              ),
+              const _IndicatorDivider(),
+
+              CycleIndicatorCard(
+                icon: Icons.schedule_rounded,
+                title: indicators.cycleTiming.title,
+                score: indicators.cycleTiming.score,
+                iconColor: const Color(0xFF258B91),
+                onTap: () {
+                  _openDetailScreen(context, CycleIndicatorType.cycleTiming);
+                },
+              ),
+              const _IndicatorDivider(),
+
+              CycleIndicatorCard(
+                icon: Icons.trending_up_rounded,
+                title: indicators.trend.summary.title,
+                score: indicators.trend.summary.score,
+                iconColor: const Color(0xFF4F5FC4),
+                onTap: () {
+                  _openDetailScreen(context, CycleIndicatorType.trend);
+                },
+              ),
+              const _IndicatorDivider(),
+
+              CycleIndicatorCard(
+                icon: Icons.psychology_outlined,
+                title: indicators.sentiment.title,
+                score: indicators.sentiment.score,
+                iconColor: const Color(0xFFD58A27),
+                onTap: () {
+                  _openDetailScreen(context, CycleIndicatorType.sentiment);
+                },
+              ),
+            ],
+          ),
+        ),
       ],
+    );
+  }
+}
+
+class _IndicatorDivider extends StatelessWidget {
+  const _IndicatorDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Divider(
+      height: 1,
+      thickness: 1,
+      indent: 16,
+      endIndent: 16,
+      color: Color(0xFFEDF0F5),
     );
   }
 }

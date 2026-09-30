@@ -29,7 +29,7 @@ class HomeScreen extends StatelessWidget {
             const TetherOverviewCard(),
             const SizedBox(height: 16),
             const CyclePosition(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             const CycleIndicatorSection(),
           ],
         ),
