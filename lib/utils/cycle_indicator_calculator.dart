@@ -370,37 +370,3 @@ double? calculateCyclePositionScore({required CycleIndicators indicators}) {
 
   return cyclePositionScore.clamp(0.0, 100.0).toDouble();
 }
-
-String getCyclePositionLabel({required double cyclePositionScore}) {
-  return switch (cyclePositionScore) {
-    >= 81 => '고점 근접',
-    >= 61 => '후반 상승 구간',
-    >= 41 => '사이클 중립',
-    >= 21 => '저평가 진입',
-    _ => '저점 근접',
-  };
-}
-
-String getCyclePositionDescription({required double cyclePositionScore}) {
-  return switch (cyclePositionScore) {
-    >= 81 =>
-      '시장 사이클 기준으로 고점에 가까운 위치입니다.\n'
-          '과거에는 이 구간 이후 변동성이 확대되는 사례가 많았습니다.',
-
-    >= 61 =>
-      '상승 사이클 후반부로 진입한 상태입니다.\n'
-          '추가 상승 가능성과 함께 변동성도 커질 수 있습니다.',
-
-    >= 41 =>
-      '시장은 현재 사이클의 중간 수준에 위치해 있습니다.\n'
-          '뚜렷한 고점이나 저점 신호는 아직 확인되지 않습니다.',
-
-    >= 21 =>
-      '시장 사이클 기준으로 저평가 영역에 가까워지고 있습니다.\n'
-          '과거에는 장기적인 회복이 시작된 사례가 많았습니다.',
-
-    _ =>
-      '시장 사이클 기준으로 저점에 가까운 위치입니다.\n'
-          '장기 투자자들의 관심이 높아지는 구간으로 평가되곤 했습니다.',
-  };
-}
