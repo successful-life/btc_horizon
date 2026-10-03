@@ -2,6 +2,7 @@ import 'package:btc_horizon/enums/cycle_indicator_type.dart';
 import 'package:btc_horizon/providers/cycle_indicator_provider.dart';
 import 'package:btc_horizon/widgets/cycle_indicator_detail_header.dart';
 import 'package:btc_horizon/widgets/indicator_table.dart';
+import 'package:btc_horizon/widgets/mvrv_history_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -38,6 +39,11 @@ class CycleIndicatorDetailScreen extends ConsumerWidget {
             IndicatorTable(indicators: cycleIndicatorModel.indicators),
 
             const SizedBox(height: 20),
+
+            if (type == CycleIndicatorType.valuation) ...[
+              const SizedBox(height: 20),
+              const MvrvHistorySection(),
+            ],
           ],
         ),
       ),
