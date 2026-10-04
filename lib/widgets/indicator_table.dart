@@ -1,8 +1,11 @@
 import 'package:btc_horizon/models/indicator_summary_model.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class IndicatorTable extends StatelessWidget {
   final List<IndicatorSummaryModel> indicators;
+
+  static final DateFormat _dataDateFormat = DateFormat('yyyy.MM.dd');
 
   const IndicatorTable({super.key, required this.indicators});
 
@@ -49,10 +52,25 @@ class IndicatorTable extends StatelessWidget {
 
           for (final indicator in indicators) ...[
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   flex: 3,
-                  child: Text(indicator.label, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(indicator.label, maxLines: 2, overflow: TextOverflow.ellipsis),
+
+                      // 데이터 기준일이 있는 지표에만 표시합니다.
+                      if (indicator.dataDate != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '기준 ${_dataDateFormat.format(indicator.dataDate!)}',
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF667085)),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
                 Expanded(
                   flex: 2,

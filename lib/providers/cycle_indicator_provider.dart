@@ -44,6 +44,7 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
       value: '로딩 중...',
       score: null,
       status: null,
+      dataDate: null,
     );
   } else if (mvrvAsync.hasError) {
     mvrvIndicator = const IndicatorSummaryModel(
@@ -51,6 +52,7 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
       value: '에러 발생',
       score: null,
       status: null,
+      dataDate: null,
     );
   } else {
     final mvrvModel = mvrvAsync.requireValue;
@@ -62,6 +64,7 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
       value: mvrvModel.mvrvZScore.toStringAsFixed(2),
       score: mvrvScore,
       status: mvrvStatus,
+      dataDate: mvrvModel.date,
     );
 
     valuationList.add(WeightedScore(score: mvrvScore, weight: mvrvWeight));
