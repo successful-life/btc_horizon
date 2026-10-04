@@ -1,30 +1,3 @@
-class MvrvHistoryPointModel {
-  final DateTime date;
-  final double btcPriceUsd;
-  final double mvrvZScore;
-
-  const MvrvHistoryPointModel({
-    required this.date,
-    required this.btcPriceUsd,
-    required this.mvrvZScore,
-  });
-
-  factory MvrvHistoryPointModel.fromJson(Map<String, dynamic> json) {
-    final price = (json['usd'] as num).toDouble();
-    final zScore = (json['mvrvZ'] as num).toDouble();
-
-    if (!price.isFinite || price <= 0 || !zScore.isFinite) {
-      throw const FormatException('MVRV 데이터에 유효하지 않은 값이 있습니다.');
-    }
-
-    return MvrvHistoryPointModel(
-      date: _parseDailyDate(json['t']),
-      btcPriceUsd: price,
-      mvrvZScore: zScore,
-    );
-  }
-}
-
 class MvrvHistoryModel {
   final DateTime asOfDate;
   final DateTime completeThrough;
@@ -65,6 +38,33 @@ class MvrvHistoryModel {
       completeThrough: _parseDailyDate(json['completeThrough']),
       source: json['source'] as String? ?? '',
       points: points,
+    );
+  }
+}
+
+class MvrvHistoryPointModel {
+  final DateTime date;
+  final double btcPriceUsd;
+  final double mvrvZScore;
+
+  const MvrvHistoryPointModel({
+    required this.date,
+    required this.btcPriceUsd,
+    required this.mvrvZScore,
+  });
+
+  factory MvrvHistoryPointModel.fromJson(Map<String, dynamic> json) {
+    final price = (json['usd'] as num).toDouble();
+    final zScore = (json['mvrvZ'] as num).toDouble();
+
+    if (!price.isFinite || price <= 0 || !zScore.isFinite) {
+      throw const FormatException('MVRV 데이터에 유효하지 않은 값이 있습니다.');
+    }
+
+    return MvrvHistoryPointModel(
+      date: _parseDailyDate(json['t']),
+      btcPriceUsd: price,
+      mvrvZScore: zScore,
     );
   }
 }
