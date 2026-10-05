@@ -33,7 +33,7 @@ class MvrvFullscreenScreen extends StatelessWidget {
                         children: [
                           const Expanded(
                             child: Text(
-                              'MVRV와 비트코인 가격',
+                              'MVRV Z-Score',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
@@ -41,6 +41,7 @@ class MvrvFullscreenScreen extends StatelessWidget {
                               ),
                             ),
                           ),
+
                           IconButton(
                             tooltip: '확대 화면 닫기',
                             icon: const Icon(Icons.fullscreen_exit_rounded),
@@ -55,9 +56,10 @@ class MvrvFullscreenScreen extends StatelessWidget {
                         padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
                         child: LayoutBuilder(
                           builder: (context, chartConstraints) {
-                            // 아주 작은 창이나 큰 글꼴에서는 내용을 잘라내지 않습니다.
                             final textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
-                            if (chartConstraints.maxHeight < 220 || textScale > 1.5) {
+                            // 기간 선택기가 추가된 만큼 최소 높이도 확보합니다.
+                            // 작은 창이나 큰 글꼴에서는 차트를 잘라내지 않고 스크롤합니다.
+                            if (chartConstraints.maxHeight < 260 || textScale > 1.5) {
                               return SingleChildScrollView(
                                 child: MvrvHistoryChart(history: history),
                               );

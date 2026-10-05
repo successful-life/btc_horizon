@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'package:btc_horizon/models/mvrv_history_model.dart';
+import 'package:btc_horizon/widgets/mvrv_range_selector.dart';
 
 class MvrvHistoryChart extends StatefulWidget {
   final MvrvHistoryModel history;
@@ -22,6 +23,7 @@ class _MvrvHistoryChartState extends State<MvrvHistoryChart> {
   static final _chartStartDate = DateTime.utc(2010, 10, 1);
   static final _dateFormat = DateFormat('yyyy/MM/dd');
   static final _axisDateFormat = DateFormat('yy.MM');
+  static final _shortAxisDateFormat = DateFormat('MM/dd');
   static final _priceFormat = NumberFormat('#,##0.00');
 
   static const _priceColor = Color(0xFF0891B2);
@@ -41,6 +43,26 @@ class _MvrvHistoryChartState extends State<MvrvHistoryChart> {
   List<FlSpot> _priceSpots = [];
   List<FlSpot> _mvrvSpots = [];
   Map<int, int> _indexByDay = {};
+  List<int> _days = [];
+  List<Offset?> _overviewPoints = [];
+
+  int _viewStartDay = 0;
+  int _viewEndDay = 1;
+  int _firstVisibleIndex = 0;
+  int _lastVisibleIndex = -1;
+
+  // 선택 폭이 지나치게 좁아지지 않도록 최소 30일 간격을 유지합니다.
+  int get _minimumSpanDays => math.min(30, _maxX.round());
+  DateTime _dateAtDay(int day) => _points.first.date.add(Duration(days: day));
+
+  MvrvHistoryPointModel? get _selectedPoint {
+    if (_firstVisibleIndex > _lastVisibleIndex) {
+      return null;
+    }
+    return _points[_selectedIndex ?? _lastVisibleIndex];
+  }
+
+  bool get _isAtLatest => _viewEndDay == _maxX.round() && _selectedIndex == null;
 
   double _maxX = 1;
   double _priceLogMin = 0;
@@ -61,7 +83,15 @@ class _MvrvHistoryChartState extends State<MvrvHistoryChart> {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.history, widget.history)) {
       final selectedDate = _selectedIndex == null ? null : _points[_selectedIndex!].date;
-      _prepareData(selectedDate: selectedDate);
+      final hadData = _points.length >= 2;
+      final wasFullRange = _viewStartDay == 0 && _viewEndDay == _maxX.round();
+      final wasAtEnd = _viewEndDay == _maxX.round();
+      _prepareData(
+        selectedDate: selectedDate,
+        rangeStart: hadData && !wasFullRange ? _dateAtDay(_viewStartDay) : null,
+        rangeEnd: hadData && !wasFullRange ? _dateAtDay(_viewEndDay) : null,
+        followLatest: wasAtEnd,
+      );
     }
   }
 
@@ -80,7 +110,12 @@ class _MvrvHistoryChartState extends State<MvrvHistoryChart> {
     return (z - closestTick).abs() < 0.000001;
   }
 
-  void _prepareData({DateTime? selectedDate}) {
+  void _prepareData({
+    DateTime? selectedDate,
+    DateTime? rangeStart,
+    DateTime? rangeEnd,
+    bool followLatest = false,
+  }) {
     // 원본은 유지하고 표시용 목록만 필터링합니다.
     _points = widget.history.points.where((point) {
       return !point.date.isBefore(_chartStartDate) &&
@@ -90,7 +125,13 @@ class _MvrvHistoryChartState extends State<MvrvHistoryChart> {
     _priceSpots = [];
     _mvrvSpots = [];
     _indexByDay = {};
+    _days = [];
+    _overviewPoints = [];
     _selectedIndex = null;
+    _viewStartDay = 0;
+    _viewEndDay = 1;
+    _firstVisibleIndex = 0;
+    _lastVisibleIndex = -1;
     if (_points.length < 2) {
       return;
     }
@@ -123,8 +164,11 @@ class _MvrvHistoryChartState extends State<MvrvHistoryChart> {
       if (i > 0 && point.date.difference(_points[i - 1].date).inDays > 1) {
         _priceSpots.add(FlSpot.nullSpot);
         _mvrvSpots.add(FlSpot.nullSpot);
+        _overviewPoints.add(null);
       }
 
+      _days.add(day);
+      _overviewPoints.add(Offset(day / _maxX, _priceToY(point.btcPriceUsd)));
       _indexByDay[day] = i;
       _priceSpots.add(FlSpot(day.toDouble(), _priceToY(point.btcPriceUsd)));
       _mvrvSpots.add(FlSpot(day.toDouble(), _zToY(point.mvrvZScore)));
@@ -132,6 +176,87 @@ class _MvrvHistoryChartState extends State<MvrvHistoryChart> {
         _selectedIndex = i;
       }
     }
+
+    if (rangeStart == null || rangeEnd == null) {
+      _setWindow(0, _maxX.round());
+    } else {
+      final span = rangeEnd.difference(rangeStart).inDays.clamp(_minimumSpanDays, _maxX.round());
+      final start = followLatest
+          ? _maxX.round() - span
+          : rangeStart.difference(firstDate).inDays.clamp(0, _maxX.round() - span);
+      _setWindow(start, start + span);
+    }
+  }
+
+  // 누락된 날짜가 있어도 실제 데이터가 존재하는 범위만 선택합니다.
+  int _lowerBound(int day) {
+    var low = 0;
+    var high = _days.length;
+    while (low < high) {
+      final middle = (low + high) ~/ 2;
+      if (_days[middle] < day) {
+        low = middle + 1;
+      } else {
+        high = middle;
+      }
+    }
+    return low;
+  }
+
+  void _setWindow(int start, int end) {
+    _viewStartDay = start;
+    _viewEndDay = end;
+    _firstVisibleIndex = _lowerBound(start);
+    _lastVisibleIndex = _lowerBound(end + 1) - 1;
+
+    final selectedIndex = _selectedIndex;
+    if (selectedIndex != null &&
+        (selectedIndex < _firstVisibleIndex || selectedIndex > _lastVisibleIndex)) {
+      _selectedIndex = null;
+    }
+  }
+
+  void _changeRange(RangeValues values) {
+    final start = (values.start * _maxX).round().clamp(0, _maxX.round() - _minimumSpanDays);
+    final end = (values.end * _maxX).round().clamp(start + _minimumSpanDays, _maxX.round());
+    if (start == _viewStartDay && end == _viewEndDay) {
+      return;
+    }
+    setState(() => _setWindow(start, end));
+  }
+
+  void _goToLatest() {
+    // 확대 비율은 유지하고 마지막 데이터가 보이도록 기간을 이동합니다.
+    final span = _viewEndDay - _viewStartDay;
+    setState(() {
+      _selectedIndex = null;
+      _setWindow(_maxX.round() - span, _maxX.round());
+    });
+  }
+
+  Widget _buildRangeSelector() {
+    final rangeText =
+        '${_dateFormat.format(_dateAtDay(_viewStartDay))}'
+        ' ~ ${_dateFormat.format(_dateAtDay(_viewEndDay))}';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          '표시 기간 · $rangeText',
+          style: const TextStyle(fontSize: 11, color: _secondaryTextColor),
+        ),
+        const SizedBox(height: 4),
+        MvrvRangeSelector(
+          overviewPoints: _overviewPoints,
+          values: RangeValues(_viewStartDay / _maxX, _viewEndDay / _maxX),
+          minimumSpan: _minimumSpanDays / _maxX,
+          firstDate: _points.first.date,
+          lastDate: _points.last.date,
+          onChanged: _changeRange,
+          height: widget.fillAvailableSpace ? 48 : 60,
+        ),
+      ],
+    );
   }
 
   // 축 눈금 간격을 1, 2, 5 × 10ⁿ 중 하나로 선택합니다.
@@ -150,7 +275,10 @@ class _MvrvHistoryChartState extends State<MvrvHistoryChart> {
 
   void _selectDay(double x) {
     final index = _indexByDay[x.round()];
-    if (index == null || index == _selectedIndex) {
+    if (index == null ||
+        index < _firstVisibleIndex ||
+        index > _lastVisibleIndex ||
+        index == _selectedIndex) {
       return;
     }
     setState(() => _selectedIndex = index);
@@ -165,8 +293,8 @@ class _MvrvHistoryChartState extends State<MvrvHistoryChart> {
       );
     }
 
-    final selected = _points[_selectedIndex ?? _points.length - 1];
-    final selectedX = selected.date.difference(_points.first.date).inDays.toDouble();
+    final selected = _selectedPoint;
+    final selectedX = selected?.date.difference(_points.first.date).inDays.toDouble();
 
     return Column(
       mainAxisSize: widget.fillAvailableSpace ? MainAxisSize.max : MainAxisSize.min,
@@ -195,27 +323,29 @@ class _MvrvHistoryChartState extends State<MvrvHistoryChart> {
           SizedBox(height: 280, child: _buildChart(selectedX)),
         const SizedBox(height: 6),
         _buildZoneLegend(),
+        SizedBox(height: widget.fillAvailableSpace ? 4 : 10),
+        _buildRangeSelector(),
         if (!widget.fillAvailableSpace) ...[
           const SizedBox(height: 18),
           const Text(
-            '차트를 터치하면 같은 날짜의 가격과 Z-Score를 확인할 수 있습니다.',
+            '양끝 손잡이로 기간을 조절하고 선택 영역을 좌우로 이동하세요. '
+            '차트를 터치하면 해당 날짜의 값을 확인할 수 있습니다.',
             style: TextStyle(fontSize: 12, color: _secondaryTextColor),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '표시 기간: ${_dateFormat.format(_points.first.date)}'
-            ' ~ ${_dateFormat.format(_points.last.date)}',
-            style: const TextStyle(fontSize: 11, color: _secondaryTextColor),
           ),
         ],
       ],
     );
   }
 
-  Widget _buildSummary(MvrvHistoryPointModel selected) {
-    final dateText =
-        '${_selectedIndex == null ? '최근 데이터' : '선택 날짜'}'
-        ' · ${_dateFormat.format(selected.date)}';
+  Widget _buildSummary(MvrvHistoryPointModel? selected) {
+    final dateLabel = _selectedIndex != null
+        ? '선택 날짜'
+        : _viewEndDay == _maxX.round()
+        ? '최근 데이터'
+        : '기간 내 마지막';
+    final dateText = selected == null
+        ? '선택 기간에 데이터가 없습니다.'
+        : '$dateLabel · ${_dateFormat.format(selected.date)}';
     final dateSelector = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -224,9 +354,9 @@ class _MvrvHistoryChartState extends State<MvrvHistoryChart> {
         ),
         const SizedBox(width: 4),
         Tooltip(
-          message: '불러온 데이터의 마지막 날짜로 돌아가기',
+          message: '표시 기간의 길이를 유지하며 최근 데이터로 이동',
           child: TextButton(
-            onPressed: _selectedIndex == null ? null : () => setState(() => _selectedIndex = null),
+            onPressed: _isAtLatest ? null : _goToLatest,
             style: TextButton.styleFrom(
               foregroundColor: _priceColor,
               disabledForegroundColor: _secondaryTextColor,
@@ -249,7 +379,7 @@ class _MvrvHistoryChartState extends State<MvrvHistoryChart> {
             flex: 3,
             child: _buildValue(
               label: 'BTC 가격',
-              value: '\$${_priceFormat.format(selected.btcPriceUsd)}',
+              value: selected == null ? '—' : '\$${_priceFormat.format(selected.btcPriceUsd)}',
               color: _priceColor,
               compact: true,
             ),
@@ -259,7 +389,7 @@ class _MvrvHistoryChartState extends State<MvrvHistoryChart> {
             flex: 2,
             child: _buildValue(
               label: 'MVRV Z-Score',
-              value: selected.mvrvZScore.toStringAsFixed(3),
+              value: selected?.mvrvZScore.toStringAsFixed(3) ?? '—',
               color: _mvrvColor,
               compact: true,
             ),
@@ -278,12 +408,12 @@ class _MvrvHistoryChartState extends State<MvrvHistoryChart> {
           children: [
             _buildValue(
               label: 'BTC 가격',
-              value: '\$${_priceFormat.format(selected.btcPriceUsd)}',
+              value: selected == null ? '—' : '\$${_priceFormat.format(selected.btcPriceUsd)}',
               color: _priceColor,
             ),
             _buildValue(
               label: 'MVRV Z-Score',
-              value: selected.mvrvZScore.toStringAsFixed(3),
+              value: selected?.mvrvZScore.toStringAsFixed(3) ?? '—',
               color: _mvrvColor,
             ),
           ],
@@ -358,17 +488,20 @@ class _MvrvHistoryChartState extends State<MvrvHistoryChart> {
     );
   }
 
-  Widget _buildChart(double selectedX) {
+  Widget _buildChart(double? selectedX) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final priceTickStep =
             ((_priceLogMax - _priceLogMin) / (constraints.maxHeight < 240 ? 3 : 5)).ceilToDouble();
-        final dateDivisions = constraints.maxWidth >= 600 ? 6 : 3;
+        final span = (_viewEndDay - _viewStartDay).toDouble();
+        final dateDivisions = math.min(constraints.maxWidth >= 600 ? 6 : 3, span);
+        final axisDateFormat = span <= 120 ? _shortAxisDateFormat : _axisDateFormat;
 
         return LineChart(
           LineChartData(
-            minX: 0,
-            maxX: _maxX,
+            minX: _viewStartDay.toDouble(),
+            maxX: _viewEndDay.toDouble(),
+            baselineX: _viewStartDay.toDouble(),
             // 0~1은 그림을 그리기 위한 좌표이며 지표 점수가 아닙니다.
             minY: 0,
             maxY: 1,
@@ -421,10 +554,10 @@ class _MvrvHistoryChartState extends State<MvrvHistoryChart> {
                 sideTitles: SideTitles(
                   showTitles: true,
                   reservedSize: 28,
-                  interval: _maxX / dateDivisions,
+                  interval: span / dateDivisions,
                   getTitlesWidget: (value, meta) {
                     final date = _points.first.date.add(Duration(days: value.round()));
-                    return _axisTitle(_axisDateFormat.format(date), meta, _secondaryTextColor);
+                    return _axisTitle(axisDateFormat.format(date), meta, _secondaryTextColor);
                   },
                 ),
               ),
@@ -449,12 +582,13 @@ class _MvrvHistoryChartState extends State<MvrvHistoryChart> {
                 _zoneBoundary(_topZoneMax, _topZoneColor),
               ],
               verticalLines: [
-                VerticalLine(
-                  x: selectedX,
-                  color: _textColor.withValues(alpha: 0.45),
-                  strokeWidth: 1,
-                  dashArray: [4, 4],
-                ),
+                if (selectedX != null)
+                  VerticalLine(
+                    x: selectedX,
+                    color: _textColor.withValues(alpha: 0.45),
+                    strokeWidth: 1,
+                    dashArray: [4, 4],
+                  ),
               ],
             ),
             lineBarsData: [_line(_priceSpots, _priceColor), _line(_mvrvSpots, _mvrvColor)],

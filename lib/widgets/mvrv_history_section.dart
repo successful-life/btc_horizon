@@ -30,7 +30,7 @@ class MvrvHistorySection extends ConsumerWidget {
                   children: [
                     const Flexible(
                       child: Text(
-                        'MVRV와 비트코인 가격',
+                        'MVRV Z-Score',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -94,15 +94,15 @@ class MvrvHistorySection extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   MvrvHistoryChart(history: history),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                   const Text(
-                    '차트 데이터: Kote Charts',
+                    'Data provider: Kote Charts',
                     style: TextStyle(fontSize: 11, color: Color(0xFF667085)),
                   ),
                   if (history.source.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
-                      '제공처의 출처 표기: ${history.source}',
+                      'Source details: ${history.source}',
                       style: const TextStyle(fontSize: 11, color: Color(0xFF667085)),
                     ),
                   ],
