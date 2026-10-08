@@ -1,11 +1,11 @@
-// 날짜의 시·분·초 대신 현재 앱에서 사용하는 연·월·일로 정렬한다.
-// UTC로 시점을 변환하는 함수가 아니라, 달력 날짜의 비교 키다.
 import 'package:btc_horizon/models/bitstamp_ohlc_model.dart';
 import 'package:btc_horizon/models/cycle_timing_analysis_chart_model.dart';
 import 'package:btc_horizon/models/cycle_timing_analysis_model.dart';
 import 'package:btc_horizon/models/cycle_timing_chart_point_model.dart';
 import 'package:btc_horizon/models/cycle_timing_interval_model.dart';
 
+// 날짜의 시·분·초 대신 현재 앱에서 사용하는 연·월·일로 정렬한다.
+// UTC로 시점을 변환하는 함수가 아니라, 달력 날짜의 비교 키다.
 int _dayKey(DateTime date) =>
     DateTime.utc(date.year, date.month, date.day).millisecondsSinceEpoch ~/
     Duration.millisecondsPerDay;
@@ -65,16 +65,9 @@ CycleTimingAnalysisChartModel buildCycleTimingAnalysisChartData({
     throw StateError('고·저점 분석 기간 전체를 포함하는 가격 데이터가 필요합니다.');
   }
 
-  const chartSamplingStep = 3;
-  final eventDaySet = eventDays.toSet();
-  final pricePoints = <CycleTimingChartPointModel>[];
-
-  for (int i = 0; i < sortedDays.length; i++) {
-    final day = sortedDays[i];
-    if (i % chartSamplingStep == 0 || i == sortedDays.length - 1 || eventDaySet.contains(day)) {
-      pricePoints.add(dailyPrices[day]!);
-    }
-  }
+  // 실제로 수신한 일별 종가를 모두 보존합니다.
+  // 날짜 축의 눈금 간격과 가격 데이터의 간격은 별도로 관리합니다.
+  final pricePoints = [for (final day in sortedDays) dailyPrices[day]!];
 
   List<CycleTimingIntervalModel> connectDates(Map<int, DateTime> dates) {
     final sorted = dates.values.toList()..sort();

@@ -7,7 +7,7 @@ import 'package:btc_horizon/models/cycle_timing_interval_model.dart';
 import 'package:btc_horizon/models/weighted_score_model.dart';
 import 'dart:math' as math;
 
-const kCycleTolerance = Duration(days: 50);
+const kCycleTolerance = Duration(days: 90);
 const kWeightTolerance = 0.001;
 
 // ================================
@@ -131,15 +131,22 @@ double calculateTransitionScore({
 }
 
 // 2-1. 날짜 기반 예측
-CycleTimingAnalysisModel calculateCycleTimingAnalysis({required DateTime today}) {
+CycleTimingAnalysisModel calculateCycleTimingAnalysis({
+  required DateTime today,
+  List<DateTime>? bottomDates,
+  List<DateTime>? topDates,
+}) {
+  // 앱에서는 등록된 날짜를 사용합니다. 별도 목록은 계산 검증 등에 사용할 수 있습니다.
+  final bottoms = bottomDates ?? btcCycleBottoms;
+  final tops = topDates ?? btcCycleTops;
   final bottomToTopIntervals = <CycleTimingIntervalModel>[];
   final topToBottomIntervals = <CycleTimingIntervalModel>[];
 
-  final bottomToTopCount = math.min(btcCycleBottoms.length, btcCycleTops.length);
+  final bottomToTopCount = math.min(bottoms.length, tops.length);
 
   for (int i = 0; i < bottomToTopCount; i++) {
-    final startDate = btcCycleBottoms[i];
-    final endDate = btcCycleTops[i];
+    final startDate = bottoms[i];
+    final endDate = tops[i];
 
     if (!endDate.isAfter(startDate)) {
       throw ArgumentError('고점 날짜는 대응하는 저점 날짜보다 이후여야 합니다.');
@@ -148,9 +155,9 @@ CycleTimingAnalysisModel calculateCycleTimingAnalysis({required DateTime today})
     bottomToTopIntervals.add(CycleTimingIntervalModel(startDate: startDate, endDate: endDate));
   }
 
-  for (int i = 0; i < btcCycleTops.length && i + 1 < btcCycleBottoms.length; i++) {
-    final startDate = btcCycleTops[i];
-    final endDate = btcCycleBottoms[i + 1];
+  for (int i = 0; i < tops.length && i + 1 < bottoms.length; i++) {
+    final startDate = tops[i];
+    final endDate = bottoms[i + 1];
 
     if (!endDate.isAfter(startDate)) {
       throw ArgumentError('다음 저점 날짜는 고점 날짜보다 이후여야 합니다.');
@@ -181,11 +188,13 @@ CycleTimingAnalysisModel calculateCycleTimingAnalysis({required DateTime today})
   final averageBottomToTopDays = (bottomToTopTotalDays / bottomToTopIntervals.length).round();
   final averageTopToBottomDays = (topToBottomTotalDays / topToBottomIntervals.length).round();
 
-  final topEstimateCenterDate = btcCycleBottoms.last.add(Duration(days: averageBottomToTopDays));
-  final bottomEstimateCenterDate = btcCycleTops.last.add(Duration(days: averageTopToBottomDays));
+  final topEstimateCenterDate = bottoms.last.add(Duration(days: averageBottomToTopDays));
+  final bottomEstimateCenterDate = tops.last.add(Duration(days: averageTopToBottomDays));
 
   final topEstimate = CycleTimingEstimateModel(
     type: CycleTimingEstimateType.top,
+    anchorDate: bottoms.last,
+    sameTypeAnchorDate: tops.last,
     centerDate: topEstimateCenterDate,
     rangeStartDate: topEstimateCenterDate.subtract(kCycleTolerance),
     rangeEndDate: topEstimateCenterDate.add(kCycleTolerance),
@@ -193,14 +202,14 @@ CycleTimingAnalysisModel calculateCycleTimingAnalysis({required DateTime today})
 
   final bottomEstimate = CycleTimingEstimateModel(
     type: CycleTimingEstimateType.bottom,
+    anchorDate: tops.last,
+    sameTypeAnchorDate: bottoms.last,
     centerDate: bottomEstimateCenterDate,
     rangeStartDate: bottomEstimateCenterDate.subtract(kCycleTolerance),
     rangeEndDate: bottomEstimateCenterDate.add(kCycleTolerance),
   );
 
-  final targetEstimate = btcCycleTops.last.isAfter(btcCycleBottoms.last)
-      ? bottomEstimate
-      : topEstimate;
+  final targetEstimate = tops.last.isAfter(bottoms.last) ? bottomEstimate : topEstimate;
   final String status;
   final double? score;
 
