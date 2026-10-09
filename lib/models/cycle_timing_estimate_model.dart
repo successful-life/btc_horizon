@@ -23,14 +23,32 @@ class CycleTimingEstimateModel {
   // 표시 기간을 잘라도 전체 예상 일수는 유지합니다.
   int get estimatedDurationDays => durationDaysFor(sameType: false);
 
-  DateTime startDateFor({required bool sameType}) => sameType ? sameTypeAnchorDate : anchorDate;
+  DateTime startDateFor({required bool sameType}) =>
+      sameType ? sameTypeAnchorDate : anchorDate;
+
+  // 범위 계산은 [시작일, 종료일)이므로 표시용 마지막 날짜를 한곳에서 정합니다.
+  DateTime get rangeLastIncludedDate =>
+      DateTime.utc(rangeEndDate.year, rangeEndDate.month, rangeEndDate.day - 1);
+
+  ({int startDays, int endDays}) durationRangeDaysFor({
+    required bool sameType,
+  }) {
+    final start = startDateFor(sameType: sameType);
+    return (
+      startDays: _dayDifference(rangeStartDate, start),
+      endDays: _dayDifference(rangeLastIncludedDate, start),
+    );
+  }
 
   int durationDaysFor({required bool sameType}) {
-    final start = startDateFor(sameType: sameType);
+    return _dayDifference(centerDate, startDateFor(sameType: sameType));
+  }
+
+  int _dayDifference(DateTime end, DateTime start) {
     return DateTime.utc(
-      centerDate.year,
-      centerDate.month,
-      centerDate.day,
+      end.year,
+      end.month,
+      end.day,
     ).difference(DateTime.utc(start.year, start.month, start.day)).inDays;
   }
 }

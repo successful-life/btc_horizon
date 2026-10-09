@@ -95,15 +95,19 @@ class CycleTimingIntervalStrip extends StatelessWidget {
             final right = rawEnd.clamp(0.0, width).toDouble();
             final clippedLeft = rawStart < 0;
             final clippedRight = rawEnd > width;
-            final label = forecast != null
-                ? '${clippedLeft || clippedRight ? '전체 ' : ''}예상 약 ${forecast.durationDaysFor(sameType: compareSameType)}일'
+            final forecastDays = forecast?.durationRangeDaysFor(sameType: compareSameType);
+            final label = forecastDays != null
+                ? '${clippedLeft || clippedRight ? '전체 ' : ''}예상 ${forecastDays.startDays}~${forecastDays.endDays}일'
                 : clippedLeft || clippedRight
                 ? '전체 ${interval.durationDays}일'
                 : '${interval.durationDays}일';
             final size = measure(label);
             rowHeight = math.max(rowHeight, size.height + 5);
             // 화살표가 짧아도 글자는 생략하지 않습니다.
-            final textLeft = ((left + right - size.width) / 2)
+            final labelStart = forecast == null
+                ? left
+                : xFor(_day(forecast.rangeStartDate)).clamp(left, right).toDouble();
+            final textLeft = ((labelStart + right - size.width) / 2)
                 .clamp(0.0, math.max(0.0, width - size.width))
                 .toDouble();
             final rect = Rect.fromLTWH(textLeft, 0, size.width, size.height);
@@ -156,7 +160,8 @@ class CycleTimingIntervalStrip extends StatelessWidget {
         );
         final lanes = [first, second];
         final forecast = estimate;
-        if (forecast != null && forecast.durationDaysFor(sameType: compareSameType) > 0) {
+        if (forecast != null &&
+            _day(forecast.rangeEndDate) > _day(forecast.startDateFor(sameType: compareSameType))) {
           final name = switch (forecast.type) {
             CycleTimingEstimateType.top => '${compareSameType ? '고점' : '저점'} → 예상 고점',
             CycleTimingEstimateType.bottom => '${compareSameType ? '저점' : '고점'} → 예상 저점',
@@ -166,7 +171,7 @@ class CycleTimingIntervalStrip extends StatelessWidget {
             [
               CycleTimingIntervalModel(
                 startDate: forecast.startDateFor(sameType: compareSameType),
-                endDate: forecast.centerDate,
+                endDate: forecast.rangeEndDate,
               ),
             ],
             name,
@@ -293,22 +298,18 @@ class _DurationLabel {
           : estimate.type == CycleTimingEstimateType.bottom;
       final anchorLabel = startsAtTop ? '등록 고점' : '등록 저점';
       final duration = estimate.durationDaysFor(sameType: sameTypeForecast);
+      final range = estimate.durationRangeDaysFor(sameType: sameTypeForecast);
+      final nextRange = estimate.durationRangeDaysFor(sameType: false);
       final basis = sameTypeForecast
-          ? '등록 지점 사이 ${duration - estimate.estimatedDurationDays}일 + 다음 구간 예상 약 ${estimate.estimatedDurationDays}일'
-          : '과거 구간 평균 기준';
-      // 예상 범위는 [시작일, 종료일)이므로 마지막 포함 날짜를 표시합니다.
-      final end = estimate.rangeEndDate;
-      final lastIncluded = DateTime.utc(
-        end.year,
-        end.month,
-        end.day,
-      ).subtract(const Duration(days: 1));
+          ? '등록 지점 사이 ${duration - estimate.estimatedDurationDays}일 + 다음 구간 예상 ${nextRange.startDays}~${nextRange.endDays}일'
+          : '과거 평균에 여유 기간을 둔 참고 범위';
+      final lastIncluded = estimate.rangeLastIncludedDate;
       details =
           '$name\n'
           '$anchorLabel: ${format.format(interval.startDate)}\n'
           '예상 중심일: ${format.format(estimate.centerDate)}\n'
           '예상 범위: ${format.format(estimate.rangeStartDate)} ~ ${format.format(lastIncluded)}\n'
-          '전체 예상 약 $duration일\n$basis';
+          '전체 예상 ${range.startDays}~${range.endDays}일\n$basis';
     }
     return '$details${clippedLeft || clippedRight ? '\n빗금은 화면 밖으로 이어지는 구간입니다.' : ''}';
   }
@@ -481,26 +482,84 @@ class _IntervalPainter extends CustomPainter {
         final paint = Paint()
           ..color = label.color
           ..strokeWidth = 1.5;
-        if (forecast == null) {
-          canvas.drawLine(Offset(label.left, y), Offset(label.right, y), paint);
-        } else {
-          // 실제 가격을 예측한 선이 아니라, 출발점부터 예상 중심일까지의 기간입니다.
-          for (var x = label.left; x < label.right; x += 9) {
-            canvas.drawLine(Offset(x, y), Offset(math.min(x + 5, label.right), y), paint);
+        if (forecast != null) {
+          final rawRangeStart = xFor(_day(forecast.rangeStartDate));
+          final rawRangeEnd = xFor(_day(forecast.rangeEndDate));
+          final rangeLeft = rawRangeStart.clamp(0.0, size.width).toDouble();
+          final rangeRight = rawRangeEnd.clamp(0.0, size.width).toDouble();
+          final connectorEnd = rawRangeStart.clamp(label.left, label.right).toDouble();
+          // 출발점에서 예상 범위까지는 점선으로 연결합니다.
+          // 평균일 한 점으로 향하는 화살표 대신, 범위 전체에 양방향 화살표를 그립니다.
+          for (var x = label.left; x < connectorEnd; x += 9) {
+            canvas.drawLine(Offset(x, y), Offset(math.min(x + 5, connectorEnd), y), paint);
           }
-          if (!label.clippedRight) {
-            final centerPaint = Paint()
-              ..color = label.color.withValues(alpha: 0.65)
-              ..strokeWidth = 1;
-            for (double top = 0; top < y; top += 10) {
+          if (rangeRight > rangeLeft) {
+            // 위 차트의 예상 범위와 동일한 날짜 경계를 사용합니다.
+            canvas.drawRect(
+              Rect.fromLTRB(rangeLeft, 0, rangeRight, y + 5),
+              Paint()..color = label.color.withValues(alpha: 0.06),
+            );
+            canvas.drawRect(
+              Rect.fromLTRB(rangeLeft, y - 5, rangeRight, y + 5),
+              Paint()..color = label.color.withValues(alpha: 0.18),
+            );
+            canvas.drawLine(Offset(rangeLeft, y), Offset(rangeRight, y), paint);
+            final boundaryPaint = Paint()
+              ..color = label.color.withValues(alpha: 0.45)
+              ..strokeWidth = 0.8;
+            for (final boundary in [rawRangeStart, rawRangeEnd]) {
+              if (boundary < 0 || boundary > size.width) {
+                continue;
+              }
+              for (double top = 0; top < y - 5; top += 9) {
+                canvas.drawLine(
+                  Offset(boundary, top),
+                  Offset(boundary, math.min(top + 4, y - 5)),
+                  boundaryPaint,
+                );
+              }
+            }
+            // 긴 전체 기록에서 범위를 실제 날짜보다 넓게 부풀리지 않습니다.
+            final headWidth = math.min(4.0, (rangeRight - rangeLeft) / 3);
+            final headHeight = math.min(3.0, headWidth);
+            if (rawRangeStart >= 0) {
+              canvas.drawLine(Offset(rangeLeft, y - 5), Offset(rangeLeft, y + 5), paint);
               canvas.drawLine(
-                Offset(label.right, top),
-                Offset(label.right, math.min(top + 6, y)),
-                centerPaint,
+                Offset(rangeLeft, y),
+                Offset(rangeLeft + headWidth, y - headHeight),
+                paint,
+              );
+              canvas.drawLine(
+                Offset(rangeLeft, y),
+                Offset(rangeLeft + headWidth, y + headHeight),
+                paint,
+              );
+            }
+            if (rawRangeEnd <= size.width) {
+              canvas.drawLine(Offset(rangeRight, y - 5), Offset(rangeRight, y + 5), paint);
+              canvas.drawLine(
+                Offset(rangeRight, y),
+                Offset(rangeRight - headWidth, y - headHeight),
+                paint,
+              );
+              canvas.drawLine(
+                Offset(rangeRight, y),
+                Offset(rangeRight - headWidth, y + headHeight),
+                paint,
               );
             }
           }
+          if (label.clippedLeft) {
+            slash(label.left, y, paint, left: true);
+          } else {
+            canvas.drawLine(Offset(label.left, y - 4), Offset(label.left, y + 4), paint);
+          }
+          if (label.clippedRight) {
+            slash(label.right, y, paint, left: false);
+          }
+          continue;
         }
+        canvas.drawLine(Offset(label.left, y), Offset(label.right, y), paint);
         if (label.clippedLeft) {
           slash(label.left, y, paint, left: true);
         } else {

@@ -16,13 +16,14 @@ final currentHalvingCycle = HalvingCycleModel(
 
 // 고점 및 저점 정보
 final btcCycleBottoms = List<DateTime>.unmodifiable([
+  // DateTime(2011, 11, 21),  // 첫 번째 저점은 제외
   DateTime(2015, 1, 14),
   DateTime(2018, 12, 15),
   DateTime(2022, 11, 21),
 ]);
 
 final btcCycleTops = List<DateTime>.unmodifiable([
-  // DateTime(2013, 11, 30) // 첫 번째 고점은 제외
+  // DateTime(2013, 11, 30), // 첫 번째 고점은 제외
   DateTime(2017, 12, 17),
   DateTime(2021, 11, 10),
   DateTime(2025, 10, 6),

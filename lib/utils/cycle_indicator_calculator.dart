@@ -7,7 +7,7 @@ import 'package:btc_horizon/models/cycle_timing_interval_model.dart';
 import 'package:btc_horizon/models/weighted_score_model.dart';
 import 'dart:math' as math;
 
-const kCycleTolerance = Duration(days: 90);
+const kCycleTolerance = Duration(days: 100);
 const kWeightTolerance = 0.001;
 
 // ================================

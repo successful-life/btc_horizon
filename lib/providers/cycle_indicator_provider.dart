@@ -81,7 +81,7 @@ final cycleIndicatorProvider = Provider<CycleIndicators>((ref) {
   ).format(cycleTimingAnalysis.targetEstimate.rangeStartDate);
   final formattedRangeEnd = DateFormat(
     'yyyy/MM/dd',
-  ).format(cycleTimingAnalysis.targetEstimate.rangeEndDate);
+  ).format(cycleTimingAnalysis.targetEstimate.rangeLastIncludedDate);
 
   final estimateLabel = switch (cycleTimingAnalysis.targetEstimate.type) {
     CycleTimingEstimateType.top => '예상 고점',

@@ -1,15 +1,15 @@
 import 'dart:math' as math;
 
-import 'package:btc_horizon/enums/cycle_timing_estimate_type.dart';
-import 'package:btc_horizon/models/cycle_timing_analysis_chart_model.dart';
-import 'package:btc_horizon/models/cycle_timing_chart_point_model.dart';
-import 'package:btc_horizon/models/cycle_timing_interval_model.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat, NumberFormat;
 
-import 'chart_range_selector.dart';
-import 'cycle_timing_interval_strip.dart';
+import 'package:btc_horizon/enums/cycle_timing_estimate_type.dart';
+import 'package:btc_horizon/models/cycle_timing_analysis_chart_model.dart';
+import 'package:btc_horizon/models/cycle_timing_chart_point_model.dart';
+import 'package:btc_horizon/models/cycle_timing_interval_model.dart';
+import 'package:btc_horizon/widgets/chart_range_selector.dart';
+import 'package:btc_horizon/widgets/cycle_timing_interval_strip.dart';
 
 enum CycleTimingIntervalMode { sameType, alternating }
 
@@ -21,7 +21,7 @@ class CycleTimingChartView {
   final DateTime? selectedDate;
 
   const CycleTimingChartView({
-    this.mode = CycleTimingIntervalMode.sameType,
+    this.mode = CycleTimingIntervalMode.alternating,
     this.startDate,
     this.endDate,
     this.selectedDate,
@@ -442,8 +442,8 @@ class _CycleTimingAnalysisChartState extends State<CycleTimingAnalysisChart> {
     final estimate = widget.data.analysis.targetEstimate;
     final forecastStart = _forecastStartDate;
     final showForecastArrow =
-        estimate.durationDaysFor(sameType: _compareSameType) > 0 &&
-        _day(estimate.centerDate) > _startDay &&
+        _day(estimate.rangeEndDate) > _day(forecastStart) &&
+        _day(estimate.rangeEndDate) > _startDay &&
         _day(forecastStart) < _endDay;
     final forecastLabel = switch (estimate.type) {
       CycleTimingEstimateType.top => '${_compareSameType ? '고점' : '저점'} → 예상 고점',
