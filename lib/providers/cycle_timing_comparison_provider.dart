@@ -27,9 +27,8 @@ final cycleTimingComparisonProvider = Provider<AsyncValue<CycleTimingComparisonM
 
       final chartPoints = <CycleTimingChartPointModel>[];
 
-      const chartSamplingStride = 3;
-
-      // 차트 hover 성능을 위해 일정 캔들 간격으로 다운샘플링 (chartSamplingStride값이 2 이상일 경우)
+      const chartSamplingStride = 1;
+      // 1이면 모든 일별 캔들을 사용하고, 2 이상이면 해당 간격으로 다운샘플링합니다.
       for (int i = 0; i < ohlcList.length; i += chartSamplingStride) {
         final ohlc = ohlcList[i];
 
