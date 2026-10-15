@@ -98,10 +98,10 @@ TrendStatus calculateTrendStatus({
   required double lowerTrendThreshold,
   required double bottomRangeBoundary,
 }) {
-  // 52W 기준선 주변의 전환 구간
+  // 장기 추세 기준선 주변의 전환 구간
   const centerBuffer = 0.015; // 1.5%
 
-  // 52W 기준선 중심 버퍼
+  // 장기 추세 기준선 중심 버퍼
   final centerRangeTop = trendBaseline * (1 + centerBuffer);
   final centerRangeBottom = trendBaseline * (1 - centerBuffer);
 
@@ -109,12 +109,12 @@ TrendStatus calculateTrendStatus({
   // 1. 상승 추세 영역
   // ========================================
   if (currentBtcPrice > centerRangeTop) {
-    // 상단 기준선까지 상회
+    // 중·단기 추세선 기준선 상회
     if (currentBtcPrice >= upperTrendThreshold) {
       return TrendStatus.veryBullish;
     }
 
-    // 52W 기준선은 상회하지만
+    // 장기 추세 기준선은 상회하지만,
     // 상단 기준선까지는 도달하지 못한 상태
     return TrendStatus.bullish;
   }
@@ -123,23 +123,23 @@ TrendStatus calculateTrendStatus({
   // 2. 하락 추세 영역
   // ========================================
   if (currentBtcPrice < centerRangeBottom) {
-    // 아직 하락 깊이 기준선까지 내려가지 않음
+    // 하락 심화 참고선까지 내려가지 않음
     if (currentBtcPrice >= lowerTrendThreshold) {
       return TrendStatus.bearish;
     }
 
-    // 하락 깊이 기준선은 하회했지만
-    // 바닥권 기준선까지는 내려가지 않음
+    // 하락 심화 참고선은 하회했지만
+    // 장기 저점 참고선까지는 내려가지 않음
     if (currentBtcPrice >= bottomRangeBoundary) {
       return TrendStatus.deepBearish;
     }
 
-    // 바닥권 기준선 이하
+    // 장기 저점 참고선 이하
     return TrendStatus.bottomRange;
   }
 
   // ========================================
-  // 3. 52W 기준선 부근
+  // 3. 장기 추세 기준선
   // ========================================
   return TrendStatus.transition;
 }

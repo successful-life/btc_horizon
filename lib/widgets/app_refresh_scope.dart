@@ -2,6 +2,7 @@ import 'package:btc_horizon/providers/upbit_price_provider.dart';
 import 'package:btc_horizon/providers/bithumb_price_provider.dart';
 import 'package:btc_horizon/enums/binance_symbol.dart';
 import 'package:btc_horizon/providers/binance_price_provider.dart';
+import 'package:btc_horizon/providers/trend_market_data_provider.dart';
 import 'package:btc_horizon/providers/analysis_date_provider.dart';
 import 'package:btc_horizon/providers/refresh_scheduler_provider.dart';
 import 'package:btc_horizon/services/refresh_scheduler.dart';
@@ -37,6 +38,9 @@ class _AppRefreshScopeState extends ConsumerState<AppRefreshScope>
     if (state == AppLifecycleState.resumed) {
       ref.read(analysisDateProvider.notifier).refresh();
       _scheduler.setActive(true);
+      if (ref.exists(binanceWeeklyTrendServiceProvider)) {
+        ref.read(binanceWeeklyTrendServiceProvider).checkConnection();
+      }
       for (final symbol in BinanceSymbol.values) {
         final provider = binanceSocketServiceProvider(symbol);
         if (ref.exists(provider)) {
