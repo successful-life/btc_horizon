@@ -5,6 +5,7 @@ import 'package:btc_horizon/widgets/indicator_table.dart';
 import 'package:btc_horizon/widgets/mvrv_history_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:btc_horizon/widgets/fear_greed_history_section.dart';
 
 class CycleIndicatorDetailScreen extends ConsumerWidget {
   final CycleIndicatorType type;
@@ -38,7 +39,10 @@ class CycleIndicatorDetailScreen extends ConsumerWidget {
 
             IndicatorTable(indicators: cycleIndicatorModel.indicators),
 
-            const SizedBox(height: 20),
+            if (type == CycleIndicatorType.sentiment) ...[
+              const SizedBox(height: 20),
+              const FearGreedHistorySection(),
+            ],
 
             if (type == CycleIndicatorType.valuation) ...[
               const SizedBox(height: 20),
