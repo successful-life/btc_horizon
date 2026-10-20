@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "359880454643",
+    "project_id": "btc-horizon-dev",
+    "storage_bucket": "btc-horizon-dev.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:359880454643:android:4b62291a773041080f6286",
+        "android_client_info": {
+          "package_name": "com.example.btc_horizon"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCn7TmoWvPjLR19hGFPM5ulTbK_n-65JQU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

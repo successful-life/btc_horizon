@@ -1,3 +1,4 @@
+import 'package:btc_horizon/widgets/exchange_app_interest_card.dart';
 import 'package:btc_horizon/enums/cycle_indicator_type.dart';
 import 'package:btc_horizon/providers/cycle_indicator_provider.dart';
 import 'package:btc_horizon/widgets/cycle_indicator_detail_header.dart';
@@ -42,6 +43,8 @@ class CycleIndicatorDetailScreen extends ConsumerWidget {
             if (type == CycleIndicatorType.sentiment) ...[
               const SizedBox(height: 20),
               const FearGreedHistorySection(),
+              const SizedBox(height: 20),
+              const ExchangeAppInterestCard(),
             ],
 
             if (type == CycleIndicatorType.valuation) ...[

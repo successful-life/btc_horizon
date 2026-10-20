@@ -1,0 +1,10 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /app_rank_latest/kr_google_play_top_free {
+      allow get: if true;
+      allow list, write: if false;
+    }
+  }
+}

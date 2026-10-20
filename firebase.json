@@ -1,0 +1,40 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "btc-horizon-dev",
+          "appId": "1:359880454643:android:4b62291a773041080f6286",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "btc-horizon-dev",
+          "configurations": {
+            "android": "1:359880454643:android:4b62291a773041080f6286",
+            "ios": "1:359880454643:ios:63b5837a75b262190f6286",
+            "macos": "1:359880454643:ios:63b5837a75b262190f6286",
+            "web": "1:359880454643:web:fe4e0e43f3aafd520f6286",
+            "windows": "1:359880454643:web:7ae4ac5f59a1b8720f6286"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "database": "(default)",
+    "location": "asia-northeast3",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "emulators": {
+    "firestore": {
+      "port": 8080
+    },
+    "ui": {
+      "enabled": true
+    },
+    "singleProjectMode": true
+  }
+}

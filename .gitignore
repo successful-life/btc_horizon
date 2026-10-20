@@ -46,3 +46,11 @@ app.*.map.json
 
 # env
 .env
+
+# 로컬 AI 개발 도구
+/.agents/
+/.claude/
+/skills-lock.json
+
+# 로컬 DevTools 설정
+/devtools_options.yaml
