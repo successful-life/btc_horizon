@@ -6,5 +6,15 @@ service cloud.firestore {
       allow get: if true;
       allow list, write: if false;
     }
+
+    match /search_interest_latest/kr_bitcoin_monthly {
+      allow get: if true;
+      allow list, write: if false;
+    }
+
+    match /search_interest_latest/global_bitcoin_monthly {
+      allow get: if true;
+      allow list, write: if false;
+    }
   }
 }

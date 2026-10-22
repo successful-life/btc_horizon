@@ -1,3 +1,4 @@
+import 'package:btc_horizon/widgets/google_trends_history_card.dart';
 import 'package:btc_horizon/widgets/exchange_app_interest_card.dart';
 import 'package:btc_horizon/enums/cycle_indicator_type.dart';
 import 'package:btc_horizon/providers/cycle_indicator_provider.dart';
@@ -45,6 +46,8 @@ class CycleIndicatorDetailScreen extends ConsumerWidget {
               const FearGreedHistorySection(),
               const SizedBox(height: 20),
               const ExchangeAppInterestCard(),
+              const SizedBox(height: 20),
+              const GoogleTrendsHistoryCard(),
             ],
 
             if (type == CycleIndicatorType.valuation) ...[

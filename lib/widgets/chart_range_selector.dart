@@ -70,29 +70,30 @@ class _ChartRangeSelectorState extends State<ChartRangeSelector> {
   void _updateDrag(double x) {
     final origin = _dragOrigin;
     final target = _dragTarget;
+
     if (origin == null || target == null) {
       return;
     }
+
     final delta = (x - _dragStartX) / _dragWidth;
+
+    // 양 끝에서 clamp의 최솟값과 최댓값이 뒤집히지 않게 합니다.
+    final startMaximum = (origin.end - widget.minimumSpan).clamp(0.0, 1.0).toDouble();
+
+    final endMinimum = (origin.start + widget.minimumSpan).clamp(0.0, 1.0).toDouble();
+
     switch (target) {
       case _DragTarget.start:
-        _emit(
-          RangeValues(
-            (origin.start + delta).clamp(0.0, origin.end - widget.minimumSpan).toDouble(),
-            origin.end,
-          ),
-        );
+        _emit(RangeValues((origin.start + delta).clamp(0.0, startMaximum).toDouble(), origin.end));
+
       case _DragTarget.end:
-        _emit(
-          RangeValues(
-            origin.start,
-            (origin.end + delta).clamp(origin.start + widget.minimumSpan, 1.0).toDouble(),
-          ),
-        );
+        _emit(RangeValues(origin.start, (origin.end + delta).clamp(endMinimum, 1.0).toDouble()));
+
       case _DragTarget.window:
         final span = origin.end - origin.start;
         final start = (origin.start + delta).clamp(0.0, 1.0 - span).toDouble();
-        _emit(RangeValues(start, start + span));
+
+        _emit(RangeValues(start, (start + span).clamp(0.0, 1.0).toDouble()));
     }
   }
 
@@ -129,9 +130,13 @@ class _ChartRangeSelectorState extends State<ChartRangeSelector> {
     final values = widget.values;
     final current = isStart ? values.start : values.end;
     final step = math.max(widget.minimumSpan / 10, 0.01);
-    final minimum = isStart ? 0.0 : values.start + widget.minimumSpan;
-    final maximum = isStart ? values.end - widget.minimumSpan : 1.0;
+
+    final minimum = isStart ? 0.0 : (values.start + widget.minimumSpan).clamp(0.0, 1.0).toDouble();
+
+    final maximum = isStart ? (values.end - widget.minimumSpan).clamp(0.0, 1.0).toDouble() : 1.0;
+
     final increase = (current + step).clamp(minimum, maximum).toDouble();
+
     final decrease = (current - step).clamp(minimum, maximum).toDouble();
 
     void change(double next) {
