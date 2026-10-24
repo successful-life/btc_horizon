@@ -1,20 +1,46 @@
 rules_version = '2';
 
+// 서버가 쓰는 공개 시장 데이터입니다. 사용자 정보나 API 키는 넣지 않습니다.
+// mvrv_z_score/latest: schemaVersion, source, asOf, completeThrough,
+// collectedAt, revision, years, pointCount, isDemo, firstDate, lastDate
+// mvrv_z_score/latest/years/{year}: revision, series[{t, usd, mvrvZ}]
+// 앱은 지정한 문서만 get하며, 모든 클라이언트 쓰기와 목록 조회는 거부합니다.
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isMvrvYear(year) {
+      return year.matches('^20[1-9][0-9]$');
+    }
+
     match /app_rank_latest/kr_google_play_top_free {
       allow get: if true;
       allow list, write: if false;
     }
-
     match /search_interest_latest/kr_bitcoin_monthly {
       allow get: if true;
       allow list, write: if false;
     }
-
     match /search_interest_latest/global_bitcoin_monthly {
       allow get: if true;
       allow list, write: if false;
     }
+
+    match /mvrv_z_score/latest {
+      allow get: if true;
+      allow list, write: if false;
+
+      match /years/{year} {
+        allow get: if isMvrvYear(year)
+          && exists(/databases/$(database)/documents/mvrv_z_score/latest);
+        allow list, write: if false;
+      }
+    }
+
+    match /_server_jobs/{document=**} {
+      allow read, write: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }
+
