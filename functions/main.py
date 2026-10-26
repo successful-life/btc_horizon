@@ -160,7 +160,6 @@ def fetch_mvrv_history() -> dict:
     }
 
 
-# 수집 함수 아래에 실행 순서와 저장 방법을 모았습니다.
 PROJECT_ID = "btc-horizon-dev"
 JOB_PATH = "_server_jobs/mvrv_sync"
 LEASE_SECONDS = 180
@@ -275,6 +274,9 @@ def publish_history(db, history, owner, scheduled_at):
             "pointCount": len(points),
             "firstDate": points[0]["t"],
             "lastDate": points[-1]["t"],
+
+            # 홈에서 전체 기록을 읽지 않고 최신 확정값을 사용할 수 있게 저장합니다.
+            "latestConfirmed": history["latestConfirmed"],
         })
         success = {
             "lockOwner": None,

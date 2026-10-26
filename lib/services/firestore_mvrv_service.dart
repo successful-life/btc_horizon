@@ -12,6 +12,53 @@ class FirestoreMvrvService {
   MvrvHistoryModel? _cachedHistory;
   Future<MvrvHistoryModel>? _inFlight;
 
+  /// 홈 점수용: latest 문서 한 개에서 최신 확정 기록만 읽습니다.
+  Future<MvrvHistoryPointModel> fetchLatestConfirmed() async {
+    final latest = await _loadDocument(latestPath);
+
+    if (latest == null) {
+      throw StateError('$latestPath 문서가 없습니다.');
+    }
+
+    if (latest['schemaVersion'] != 1 || latest['isDemo'] != false) {
+      throw const FormatException('MVRV 저장 형식 또는 실제 데이터 여부를 확인할 수 없습니다.');
+    }
+
+    final rawPoint = latest['latestConfirmed'];
+
+    if (rawPoint is! Map) {
+      throw const FormatException('latestConfirmed가 없습니다. 서버 수집 결과를 확인해 주세요.');
+    }
+
+    final source = latest['source'];
+    final revision = latest['revision'];
+
+    if (source is! String ||
+        source.trim().isEmpty ||
+        revision is! String ||
+        revision.trim().isEmpty) {
+      throw const FormatException('MVRV 출처 또는 데이터 버전이 없습니다.');
+    }
+
+    // 기존 모델의 날짜·숫자 검증을 재사용합니다.
+    // series에는 서버가 보내준 최신 기록 한 건만 넣습니다.
+    final parsed = MvrvHistoryModel.fromJson({
+      'asOf': latest['asOf'],
+      'completeThrough': latest['completeThrough'],
+      'source': source,
+      'series': [Map<String, dynamic>.from(rawPoint)],
+    });
+
+    final point = parsed.points.single;
+
+    if (parsed.completeThrough.isAfter(parsed.asOfDate) ||
+        point.date.isAfter(parsed.completeThrough)) {
+      throw const FormatException('최신 MVRV 기록이 확정 날짜 범위를 벗어났습니다.');
+    }
+
+    return point;
+  }
+
   Future<MvrvHistoryModel> fetchMvrvHistory() async {
     final running = _inFlight;
     if (running != null) return running;

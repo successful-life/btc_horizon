@@ -27,4 +27,3 @@ final mvrvHistoryProvider = FutureProvider<MvrvHistoryModel>((ref) {
     retryAfter: kMvrvRetryInterval,
   );
 }, retry: disableAutomaticRetry);
-
