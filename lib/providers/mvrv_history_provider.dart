@@ -7,13 +7,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final firestoreMvrvServiceProvider = Provider<FirestoreMvrvService>((ref) {
   final db = FirebaseFirestore.instance;
+
   return FirestoreMvrvService(
     loadDocument: (path) async {
       final snapshot = await db
           .doc(path)
           .get(const GetOptions(source: Source.server))
           .timeout(const Duration(seconds: 15));
-      return snapshot.data();
+
+      final data = snapshot.data();
+
+      if (data == null) {
+        return null;
+      }
+
+      final collectedAt = data['collectedAt'];
+
+      return <String, dynamic>{
+        ...data,
+        if (collectedAt is Timestamp) 'collectedAt': collectedAt.toDate().toUtc(),
+      };
     },
   );
 });

@@ -1,4 +1,5 @@
 import 'package:btc_horizon/models/mvrv_history_model.dart';
+import 'package:btc_horizon/models/mvrv_latest_model.dart';
 
 /// 문서 한 개를 읽는 동작은 provider에서 전달합니다.
 typedef MvrvDocumentLoader = Future<Map<String, dynamic>?> Function(String path);
@@ -12,8 +13,8 @@ class FirestoreMvrvService {
   MvrvHistoryModel? _cachedHistory;
   Future<MvrvHistoryModel>? _inFlight;
 
-  /// 홈 점수용: latest 문서 한 개에서 최신 확정 기록만 읽습니다.
-  Future<MvrvHistoryPointModel> fetchLatestConfirmed() async {
+  /// latest 문서 한 개에서 최신 확정 기록과 관련 정보를 읽습니다.
+  Future<MvrvLatestModel> fetchLatest({required DateTime Function() now}) async {
     final latest = await _loadDocument(latestPath);
 
     if (latest == null) {
@@ -41,7 +42,6 @@ class FirestoreMvrvService {
     }
 
     // 기존 모델의 날짜·숫자 검증을 재사용합니다.
-    // series에는 서버가 보내준 최신 기록 한 건만 넣습니다.
     final parsed = MvrvHistoryModel.fromJson({
       'asOf': latest['asOf'],
       'completeThrough': latest['completeThrough'],
@@ -56,7 +56,22 @@ class FirestoreMvrvService {
       throw const FormatException('최신 MVRV 기록이 확정 날짜 범위를 벗어났습니다.');
     }
 
-    return point;
+    // provider에서 Timestamp → DateTime으로 변환한 값입니다.
+    final collectedAt = latest['collectedAt'];
+
+    if (collectedAt is! DateTime) {
+      throw const FormatException('MVRV 수집 시각이 없거나 형식이 올바르지 않습니다.');
+    }
+
+    return MvrvLatestModel(
+      latestConfirmed: point,
+      asOfDate: parsed.asOfDate,
+      completeThrough: parsed.completeThrough,
+      collectedAt: collectedAt.toUtc(),
+      checkedAt: now().toUtc(),
+      revision: revision,
+      source: source,
+    );
   }
 
   Future<MvrvHistoryModel> fetchMvrvHistory() async {
