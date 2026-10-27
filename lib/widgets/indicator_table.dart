@@ -4,10 +4,11 @@ import 'package:intl/intl.dart';
 
 class IndicatorTable extends StatelessWidget {
   final List<IndicatorSummaryModel> indicators;
+  final Widget? Function(BuildContext context, IndicatorSummaryModel indicator)? detailsBuilder;
 
   static final DateFormat _dataDateFormat = DateFormat('yyyy.MM.dd');
 
-  const IndicatorTable({super.key, required this.indicators});
+  const IndicatorTable({super.key, required this.indicators, this.detailsBuilder});
 
   @override
   Widget build(BuildContext context) {
@@ -56,21 +57,7 @@ class IndicatorTable extends StatelessWidget {
               children: [
                 Expanded(
                   flex: 3,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(indicator.label, maxLines: 2, overflow: TextOverflow.ellipsis),
-
-                      // 데이터 기준일이 있는 지표에만 표시합니다.
-                      if (indicator.dataDate != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          '기준 ${_dataDateFormat.format(indicator.dataDate!)}',
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF667085)),
-                        ),
-                      ],
-                    ],
-                  ),
+                  child: Text(indicator.label, maxLines: 2, overflow: TextOverflow.ellipsis),
                 ),
                 Expanded(
                   flex: 2,
@@ -101,6 +88,18 @@ class IndicatorTable extends StatelessWidget {
                 ),
               ],
             ),
+
+            if (indicator.dataDate != null) ...[
+              const SizedBox(height: 6),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '점수 기준일 ${_dataDateFormat.format(indicator.dataDate!.toUtc())}',
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF667085)),
+                ),
+              ),
+            ],
+            if (detailsBuilder?.call(context, indicator) case final Widget details) details,
 
             const Divider(),
           ],
