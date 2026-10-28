@@ -1,5 +1,6 @@
 import 'package:btc_horizon/models/mvrv_latest_model.dart';
 import 'package:btc_horizon/providers/mvrv_z_score_provider.dart';
+import 'package:btc_horizon/utils/mvrv_freshness.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -18,6 +19,94 @@ class _MvrvDataInfoState extends ConsumerState<MvrvDataInfo> {
   String _formatDay(DateTime value) => DateFormat('yyyy.MM.dd').format(value.toUtc());
 
   String _formatTime(DateTime value) => DateFormat('yyyy.MM.dd HH:mm').format(value.toLocal());
+
+  Widget _notice({required String title, required String message}) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFAEB),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFFEDFA0)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 2),
+            child: Icon(Icons.info_outline_rounded, size: 18, color: Color(0xFFB54708)),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF93370D),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: const TextStyle(fontSize: 12, height: 1.6, color: Color(0xFF93370D)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _freshnessNotice(MvrvLatestModel data) {
+    final freshness = evaluateMvrvFreshness(data);
+
+    // 날짜·시각이 맞지 않으면 지연 여부보다 먼저 안내합니다.
+    if (freshness.needsClockCheck) {
+      return _notice(
+        title: '날짜·시각 확인 필요',
+        message:
+            '마지막 확인 당시 데이터 날짜 또는 서버 저장 시각이 '
+            '앱의 확인 시각보다 미래로 표시되었습니다.\n'
+            '기기의 날짜·시간 설정을 확인한 뒤 다시 조회해 주세요. '
+            '문제가 계속되면 데이터 시각도 확인해야 합니다.',
+      );
+    }
+
+    final messages = <String>[];
+
+    if (freshness.isSourceDateOld) {
+      messages.add(
+        '점수 기준일이 확인 날짜보다 '
+        '${freshness.sourceLagDays}일 이전입니다.',
+      );
+    }
+
+    if (freshness.isCollectionOld) {
+      messages.add(
+        '서버에 자료가 저장된 지 '
+        '${freshness.collectionAge.inHours}시간 이상 지났습니다.',
+      );
+    }
+
+    // 기준을 넘지 않았다면 별도 안내를 표시하지 않습니다.
+    if (messages.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return _notice(
+      title: '데이터 갱신 확인 필요',
+      message:
+          '마지막 확인 당시:\n'
+          '${messages.join('\n')}\n\n'
+          '표시된 기준일의 값으로 점수를 계산하고 있습니다.',
+    );
+  }
 
   Widget _details(MvrvLatestModel data) {
     return Padding(
@@ -121,7 +210,16 @@ class _MvrvDataInfoState extends ConsumerState<MvrvDataInfo> {
               style: TextStyle(fontSize: 13, height: 1.6, color: Color(0xFFB54708)),
             ),
           ),
-          data: (data) => _expanded ? _details(data) : const SizedBox.shrink(),
+          data: (data) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 주의 안내는 데이터 정보가 접혀 있어도 표시합니다.
+              _freshnessNotice(data),
+
+              // 자세한 날짜 설명은 펼쳤을 때만 표시합니다.
+              if (_expanded) _details(data),
+            ],
+          ),
         ),
       ],
     );
