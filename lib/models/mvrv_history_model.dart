@@ -11,6 +11,16 @@ class MvrvHistoryModel {
     required List<MvrvHistoryPointModel> points,
   }) : points = List.unmodifiable(points);
 
+  /// 차트 기록을 JSON으로 저장할 수 있는 형태로 변환합니다.
+  Map<String, dynamic> toJson() {
+    return {
+      'asOf': _formatDailyDate(asOfDate),
+      'completeThrough': _formatDailyDate(completeThrough),
+      'source': source,
+      'series': points.map((point) => point.toJson()).toList(growable: false),
+    };
+  }
+
   factory MvrvHistoryModel.fromJson(Map<String, dynamic> json) {
     final rawSeries = json['series'];
 
@@ -53,6 +63,11 @@ class MvrvHistoryPointModel {
     required this.mvrvZScore,
   });
 
+  /// 하루의 기준일·가격·MVRV 값을 저장 형식으로 변환합니다.
+  Map<String, dynamic> toJson() {
+    return {'t': _formatDailyDate(date), 'usd': btcPriceUsd, 'mvrvZ': mvrvZScore};
+  }
+
   factory MvrvHistoryPointModel.fromJson(Map<String, dynamic> json) {
     final price = (json['usd'] as num).toDouble();
     final zScore = (json['mvrvZ'] as num).toDouble();
@@ -82,4 +97,9 @@ DateTime _parseDailyDate(Object? value) {
   }
 
   return date;
+}
+
+/// 일별 기준일을 UTC 기준 YYYY-MM-DD 문자열로 변환합니다.
+String _formatDailyDate(DateTime value) {
+  return value.toUtc().toIso8601String().substring(0, 10);
 }
