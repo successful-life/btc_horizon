@@ -1,17 +1,22 @@
 import 'package:btc_horizon/models/mvrv_history_model.dart';
 import 'package:btc_horizon/models/mvrv_latest_model.dart';
+import 'package:btc_horizon/models/mvrv_history_cache.dart';
 
 /// 문서 한 개를 읽는 동작은 provider에서 전달합니다.
 typedef MvrvDocumentLoader = Future<Map<String, dynamic>?> Function(String path);
 
 class FirestoreMvrvService {
-  FirestoreMvrvService({required MvrvDocumentLoader loadDocument}) : _loadDocument = loadDocument;
+  FirestoreMvrvService({required MvrvDocumentLoader loadDocument, DateTime Function()? now})
+    : _loadDocument = loadDocument,
+      _now = now ?? DateTime.now;
 
   static const latestPath = 'mvrv_z_score/latest';
   final MvrvDocumentLoader _loadDocument;
+  final DateTime Function() _now;
+
   String? _cachedRevision;
   MvrvHistoryModel? _cachedHistory;
-  Future<MvrvHistoryModel>? _inFlight;
+  Future<MvrvHistoryCache>? _inFlight;
 
   /// latest 문서 한 개에서 최신 확정 기록과 관련 정보를 읽습니다.
   Future<MvrvLatestModel> fetchLatest({required DateTime Function() now}) async {
@@ -74,11 +79,29 @@ class FirestoreMvrvService {
     );
   }
 
+  /// 기기 저장본을 메모리에 연결합니다. 서버 확인 시각은 바꾸지 않습니다.
+  void seedHistoryCache(MvrvHistoryCache snapshot) {
+    if (_cachedHistory != null || _inFlight != null) return;
+    _cachedRevision = snapshot.revision;
+    _cachedHistory = snapshot.history;
+  }
+
+  /// 기존 코드에서 차트 기록만 필요할 때 사용할 수 있습니다.
   Future<MvrvHistoryModel> fetchMvrvHistory() async {
+    return (await fetchMvrvHistorySnapshot()).history;
+  }
+
+  /// 차트 기록과 서버 버전, 확인 시각을 함께 반환합니다.
+  Future<MvrvHistoryCache> fetchMvrvHistorySnapshot() async {
     final running = _inFlight;
-    if (running != null) return running;
+
+    if (running != null) {
+      return running;
+    }
+
     final task = _fetchConsistentHistory();
     _inFlight = task;
+
     try {
       return await task;
     } finally {
@@ -86,7 +109,7 @@ class FirestoreMvrvService {
     }
   }
 
-  Future<MvrvHistoryModel> _fetchConsistentHistory() async {
+  Future<MvrvHistoryCache> _fetchConsistentHistory() async {
     // 서버 갱신과 겹쳐 revision이 섞인 경우에만 한 번 다시 읽습니다.
     for (var attempt = 0; attempt < 2; attempt++) {
       try {
@@ -100,7 +123,7 @@ class FirestoreMvrvService {
     throw StateError('MVRV 데이터를 읽지 못했습니다.');
   }
 
-  Future<MvrvHistoryModel> _readOneRevision() async {
+  Future<MvrvHistoryCache> _readOneRevision() async {
     final latest = await _loadDocument(latestPath);
     if (latest == null) throw StateError('$latestPath 문서가 없습니다.');
     if (latest['schemaVersion'] != 1) {
@@ -140,7 +163,29 @@ class FirestoreMvrvService {
 
     // 앱 실행 중 이미 읽은 같은 revision이면 연도별 문서는 재사용합니다.
     final cached = _cachedHistory;
-    if (_cachedRevision == revision && cached != null) return cached;
+
+    final cachedYears = cached?.points.map((point) => point.date.year).toSet();
+    final reusable =
+        cached != null &&
+        _cachedRevision == revision &&
+        cached.points.length == count &&
+        cached.source == latest['source'] &&
+        cached.asOfDate.toIso8601String().substring(0, 10) == latest['asOf'] &&
+        cached.completeThrough.toIso8601String().substring(0, 10) == latest['completeThrough'] &&
+        cachedYears!.length == years.length &&
+        cachedYears.containsAll(years) &&
+        (!latest.containsKey('firstDate') ||
+            latest['firstDate'] == cached.points.first.date.toIso8601String().substring(0, 10)) &&
+        (!latest.containsKey('lastDate') ||
+            latest['lastDate'] == cached.points.last.date.toIso8601String().substring(0, 10));
+
+    if (reusable) {
+      return MvrvHistoryCache.fromHistory(
+        revision: revision,
+        lastVerifiedAt: _now(),
+        history: cached,
+      );
+    }
 
     // 목록 조회 대신 각 문서의 정확한 경로를 지정합니다.
     final annualData = await Future.wait(
@@ -195,9 +240,16 @@ class FirestoreMvrvService {
         throw FormatException('MVRV ${entry.key} 정보와 실제 기록이 다릅니다.');
       }
     }
+    final snapshot = MvrvHistoryCache.fromHistory(
+      revision: revision,
+      lastVerifiedAt: _now(),
+      history: history,
+    );
+
     _cachedRevision = revision;
     _cachedHistory = history;
-    return history;
+
+    return snapshot;
   }
 }
 

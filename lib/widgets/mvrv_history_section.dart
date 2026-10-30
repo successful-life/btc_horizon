@@ -1,3 +1,5 @@
+import 'package:btc_horizon/models/mvrv_history_view.dart';
+import 'package:intl/intl.dart';
 import 'package:btc_horizon/providers/mvrv_history_provider.dart';
 import 'package:btc_horizon/screens/mvrv_fullscreen_screen.dart';
 import 'package:btc_horizon/widgets/mvrv_history_chart.dart';
@@ -7,14 +9,68 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class MvrvHistorySection extends ConsumerWidget {
   const MvrvHistorySection({super.key});
 
+  Widget _buildDataStatus(MvrvHistoryView view) {
+    final warning = view.verificationFailed || view.persistenceFailed;
+    final message = view.isChecking
+        ? '이전 차트를 표시하며 서버 자료를 확인하고 있습니다.'
+        : view.verificationFailed
+        ? '최신 자료를 확인하지 못해 이전 차트를 표시합니다.'
+        : '서버 자료를 확인했습니다.';
+    final verifiedAt = DateFormat(
+      'yyyy.MM.dd HH:mm',
+    ).format(view.snapshot.lastVerifiedAt.toLocal());
+    final referenceDate = DateFormat(
+      'yyyy.MM.dd',
+    ).format(view.snapshot.history.points.last.date.toUtc());
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: warning ? const Color(0xFFFFFAEB) : const Color(0xFFF8F9FC),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (view.isChecking) ...[
+            const LinearProgressIndicator(minHeight: 2),
+            const SizedBox(height: 8),
+          ],
+          Text(
+            message,
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.5,
+              color: warning ? const Color(0xFF93370D) : const Color(0xFF667085),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '기록 마지막 날짜 $referenceDate (UTC)\n'
+            '차트 서버 확인 $verifiedAt · 기기 시간',
+            style: const TextStyle(fontSize: 11, height: 1.5, color: Color(0xFF667085)),
+          ),
+          if (view.persistenceFailed) ...[
+            const SizedBox(height: 6),
+            const Text(
+              '이번 자료를 기기에 저장하지 못했습니다.',
+              style: TextStyle(fontSize: 12, color: Color(0xFF93370D)),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final historyAsync = ref.watch(mvrvHistoryProvider);
 
-    // 현재 화면에 정상적으로 표시되는 데이터가 있을 때만 확대를 허용합니다.f
-    final expandableHistory = !historyAsync.isLoading && !historyAsync.hasError
-        ? historyAsync.asData?.value
-        : null;
+    final view = historyAsync.asData?.value;
+    final expandableHistory = view?.snapshot.history;
+    final checking = historyAsync.isLoading || (view?.isChecking ?? false);
 
     return Container(
       width: double.infinity,
@@ -68,6 +124,13 @@ class MvrvHistorySection extends ConsumerWidget {
               const SizedBox(width: 4),
 
               IconButton(
+                tooltip: '차트 자료 다시 확인',
+                onPressed: checking ? null : () => ref.invalidate(mvrvHistoryProvider),
+                icon: const Icon(Icons.refresh_rounded, size: 22),
+                color: const Color(0xFF667085),
+              ),
+
+              IconButton(
                 tooltip: '차트 확대',
                 constraints: const BoxConstraints.tightFor(width: 48, height: 48),
                 padding: EdgeInsets.zero,
@@ -88,11 +151,14 @@ class MvrvHistorySection extends ConsumerWidget {
           ),
 
           historyAsync.when(
-            skipLoadingOnRefresh: false,
-            data: (history) {
+            skipLoadingOnRefresh: true,
+            skipError: false,
+            data: (view) {
+              final history = view.snapshot.history;
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _buildDataStatus(view),
                   MvrvHistoryChart(history: history),
                   const SizedBox(height: 14),
                   const Text(
